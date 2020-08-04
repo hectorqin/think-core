@@ -1,0 +1,26 @@
+{
+    "name": "hectorqin/think-core",
+    "description": "The enhanced TP Framework based on ThinkPHP3.2",
+    "type": "framework",
+    "keywords": ["framework", "thinkphp", "ORM"],
+    "homepage": "http://thinkphp.cn/",
+    "license": "Apache2",
+    "authors": [{
+            "name": "hectorqin",
+            "email": "hectorqin@163.com"
+        },
+        {
+            "name": "liu21st",
+            "email": "liu21st@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0"
+    },
+    "autoload": {
+        "classmap": [
+        ],
+        "psr-4": {
+        }
+    }
+}
