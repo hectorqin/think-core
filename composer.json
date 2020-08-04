@@ -4,7 +4,7 @@
     "type": "framework",
     "keywords": ["framework", "thinkphp", "ORM"],
     "homepage": "http://thinkphp.cn/",
-    "license": "Apache2",
+    "license": "MIT",
     "authors": [{
             "name": "hectorqin",
             "email": "hectorqin@163.com"
@@ -21,6 +21,10 @@
         "classmap": [
         ],
         "psr-4": {
-        }
+        },
+        "files": [
+            "src/Common/helper.php",
+            "src/Library/Think/Think.class.php"
+        ]
     }
 }

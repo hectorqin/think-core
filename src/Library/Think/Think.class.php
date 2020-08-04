@@ -50,7 +50,7 @@ class Think
         Storage::connect(STORAGE_TYPE);
         // 加入多域名模板缓存、runtime缓存区分标识，防止依赖 $_SERVER 的配置失效
         $runtimefile = RUNTIME_PATH . (defined('MULTI_DOMAIN_MARKING') ? MULTI_DOMAIN_MARKING : '') . APP_MODE . '~runtime.php';
-        if (!APP_DEBUG && Storage::has($runtimefile)) {
+        if (!\IS_CLI && !APP_DEBUG && Storage::has($runtimefile)) {
             Storage::load($runtimefile);
         } else {
             if (Storage::has($runtimefile)) {
@@ -106,18 +106,17 @@ class Think
             // 加载框架底层语言包
             L(include THINK_PATH . 'Lang/' . strtolower(C('DEFAULT_LANG')) . '.php');
 
-            if (!APP_DEBUG) {
+            if (!\IS_CLI && !APP_DEBUG) {
                 $content .= "\nnamespace { Think\\Think::addMap(" . var_export(self::$_map, true) . ");";
                 $content .= "\nL(" . var_export(L(), true) . ");\nC(" . var_export(C(), true) . ');Think\Hook::import(' . var_export(Hook::get(), true) . ');}';
                 Storage::put($runtimefile, strip_whitespace('<?php ' . $content));
-            } else {
+            } else if (\APP_DEBUG) {
                 // 调试模式加载系统默认的配置文件
                 C(include THINK_PATH . 'Conf/debug.php');
                 // 读取应用调试配置文件
                 if (is_file(CONF_PATH . 'debug' . CONF_EXT)) {
                     C(include CONF_PATH . 'debug' . CONF_EXT);
                 }
-
             }
         }
 
@@ -352,7 +351,11 @@ class Think
                 $e = $error;
             }
             if (IS_CLI) {
-                exit(iconv('UTF-8', 'gbk', $e['message']) . PHP_EOL . 'FILE: ' . $e['file'] . '(' . $e['line'] . ')' . PHP_EOL . $e['trace']);
+                if (IS_WIN) {
+                    exit(iconv('UTF-8', 'gbk', $e['message']) . PHP_EOL . 'FILE: ' . $e['file'] . '(' . $e['line'] . ')' . PHP_EOL . $e['trace']);
+                } else {
+                    exit($e['message'] . PHP_EOL . 'FILE: ' . $e['file'] . '(' . $e['line'] . ')' . PHP_EOL . $e['trace']);
+                }
             }
         } else {
             //否则定向到错误页面

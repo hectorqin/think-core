@@ -64,7 +64,7 @@ defined('DATA_PATH') or define('DATA_PATH', RUNTIME_PATH . 'Data/'); // 应用�
 defined('CACHE_PATH') or define('CACHE_PATH', RUNTIME_PATH . 'Cache/'); // 应用模板缓存目录
 defined('CONF_EXT') or define('CONF_EXT', '.php'); // 配置文件后缀
 defined('CONF_PARSE') or define('CONF_PARSE', ''); // 配置文件解析方法
-defined('ADDON_PATH') or define('ADDON_PATH', APP_PATH . 'Addon');
+defined('ADDON_PATH') or define('ADDON_PATH', APP_PATH . 'Addon/');
 
 // 系统信息
 if (version_compare(PHP_VERSION, '5.4.0', '<')) {
@@ -93,6 +93,8 @@ if (!IS_CLI) {
         $_root = rtrim(dirname(_PHP_FILE_), '/');
         define('__ROOT__', (($_root == '/' || $_root == '\\') ? '' : $_root));
     }
+    // 多域名模板缓存、runtime缓存区分标识
+    defined('MULTI_DOMAIN_MARKING') or define('MULTI_DOMAIN_MARKING', (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'undefined') . str_replace("/", "_", __ROOT__) . '_');
 } else {
     // 命令行模式
     define('_PHP_FILE_', rtrim(isset($_SERVER['argv'][0]) ? $_SERVER['argv'][0] : '', '/'));
@@ -106,13 +108,6 @@ if (!IS_CLI) {
         parse_str($_SERVER['argv'][2], $_GET);
     }
 }
-// 多域名模板缓存、runtime缓存区分标识
-defined('MULTI_DOMAIN_MARKING') or define('MULTI_DOMAIN_MARKING', (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'undefined') . str_replace("/", "_", __ROOT__) . '_');
-
-// 加载核心Think类
-require BASE_PATH . 'ThinkPHP/Library/Think/Think' . EXT;
-// 配置文件助手函数
-require __DIR__ . '/Common/helper.php';
 
 // 注册自动加载函数
 Think\Think::registerLoader();

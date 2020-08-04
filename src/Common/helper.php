@@ -2,6 +2,11 @@
 
 use Utils\Arr as Arr;
 
+function loadTPFramework()
+{
+    require_once __DIR__ . '/../ThinkPHP.php';
+}
+
 if (!function_exists('value')) {
     /**
      * Return the default value of the given value.
