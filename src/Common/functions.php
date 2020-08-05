@@ -1063,7 +1063,7 @@ function U($url = '', $vars = '', $suffix = true, $domain = false)
                 $var[$varModule] = implode($depr, $path);
             } else {
                 if (C('MULTI_MODULE')) {
-                    if (MODULE_NAME != C('DEFAULT_MODULE') || !C('MODULE_ALLOW_LIST')) {
+                    if (MODULE_NAME != C('DEFAULT_MODULE') || !C('MODULE_ALLOW_LIST') || !C('AUTO_HIDE_MODULE')) {
                         $var[$varModule] = MODULE_NAME;
                     }
                 }
