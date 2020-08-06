@@ -160,6 +160,9 @@ function G($start, $end = '', $dec = 4)
             return number_format(($_info[$end] - $_info[$start]), $dec);
         }
 
+    } elseif (0 === strpos($start, '?')) { // 检查是否记录信息
+        $start = substr($start, 1);
+        return isset($_info[$start]) ? $_info[$start] : false;
     } else { // 记录时间和内存使用
         $_info[$start] = microtime(true);
         if (MEMORY_LIMIT_ON) {
@@ -308,7 +311,7 @@ function T($template = '', $layer = '')
  * @param mixed $datas 要获取的额外数据源
  * @return mixed
  */
-function I($name, $default = '', $filter = null, $datas = null)
+function I($name='', $default = '', $filter = null, $datas = null)
 {
     static $_PUT  = null;
     static $_JSON = null;
