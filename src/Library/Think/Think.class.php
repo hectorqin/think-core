@@ -302,7 +302,7 @@ class Think
                 break;
             default:
                 $errorStr = "[$errno] $errstr " . $errfile . "($errline)";
-                self::trace($errorStr, '', 'NOTIC');
+                self::trace($errorStr, '', Log::NOTICE);
                 break;
         }
     }
