@@ -225,7 +225,7 @@ abstract class Controller
      * @param int $json_option 传递给json_encode的option参数
      * @return void
      */
-    protected function ajaxReturn($data, $type = '', $json_option = 0)
+    protected function ajaxReturn($data, $type = '', $json_option = \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)
     {
         if (empty($type)) {
             $type = C('DEFAULT_AJAX_RETURN');
