@@ -12,7 +12,6 @@ namespace Think\Cache\Driver;
 
 use Think\Cache;
 
-defined('THINK_PATH') or exit();
 /**
  * 文件类型缓存类
  */
@@ -93,15 +92,17 @@ class File extends Cache
         $content = file_get_contents($filename);
         if (false !== $content) {
             $expire = (int) substr($content, 8, 12);
-            if ($expire != 0 && time() > filemtime($filename) + $expire) {
+            if (0 != $expire && time() > filemtime($filename) + $expire) {
                 //缓存过期删除缓存文件
                 unlink($filename);
                 return false;
             }
-            if (C('DATA_CACHE_CHECK')) { //开启数据校验
+            if (C('DATA_CACHE_CHECK')) {
+                //开启数据校验
                 $check   = substr($content, 20, 32);
                 $content = substr($content, 52, -3);
-                if ($check != md5($content)) { //校验错误
+                if (md5($content) != $check) {
+                    //校验错误
                     return false;
                 }
             } else {
@@ -140,7 +141,8 @@ class File extends Cache
             //数据压缩
             $data = gzcompress($data, 3);
         }
-        if (C('DATA_CACHE_CHECK')) { //开启数据校验
+        if (C('DATA_CACHE_CHECK')) {
+            //开启数据校验
             $check = md5($data);
         } else {
             $check = '';
@@ -182,7 +184,7 @@ class File extends Cache
         $files = scandir($path);
         if ($files) {
             foreach ($files as $file) {
-                if ($file != '.' && $file != '..' && is_dir($path . $file)) {
+                if ('.' != $file && '..' != $file && is_dir($path . $file)) {
                     array_map('unlink', glob($path . $file . '/*.*'));
                 } elseif (is_file($path . $file)) {
                     unlink($path . $file);

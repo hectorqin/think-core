@@ -100,9 +100,9 @@ class View
         }
 
         // 网页字符编码
-        header('Content-Type:' . $contentType . '; charset=' . $charset);
+        header('Content-Type: ' . $contentType . '; charset=' . $charset);
         header('Cache-control: ' . C('HTTP_CACHE_CONTROL')); // 页面缓存控制
-        header('X-Powered-By:ThinkPHP');
+        header('X-Powered-By: ThinkPHP');
         // 输出模板文件
         echo $content;
     }
@@ -130,12 +130,25 @@ class View
         // 页面缓存
         ob_start();
         ob_implicit_flush(0);
-        if ('php' == strtolower(C('TMPL_ENGINE_TYPE'))) { // 使用PHP原生模板
-            $_content = $content;
-            // 模板阵列变量分解成为独立变量
-            extract($this->tVar, EXTR_OVERWRITE);
-            // 直接载入PHP模板
-            empty($_content) ? include $templateFile : eval('?>' . $_content);
+        if ('php' == strtolower(C('TMPL_ENGINE_TYPE'))) {
+            // 使用PHP原生模板
+            if (empty($content)) {
+                if (isset($this->tVar['templateFile'])) {
+                    $__template__ = $templateFile;
+                    extract($this->tVar, EXTR_OVERWRITE);
+                    include $__template__;
+                } else {
+                    extract($this->tVar, EXTR_OVERWRITE);
+                    include $templateFile;
+                }
+            } elseif (isset($this->tVar['content'])) {
+                $__content__ = $content;
+                extract($this->tVar, EXTR_OVERWRITE);
+                eval('?>' . $__content__);
+            } else {
+                extract($this->tVar, EXTR_OVERWRITE);
+                eval('?>' . $content);
+            }
         } else {
             // 视图解析标签
             $params = array('var' => $this->tVar, 'file' => $templateFile, 'content' => $content, 'prefix' => $prefix);
@@ -145,6 +158,11 @@ class View
         $content = ob_get_clean();
         // 内容过滤标签
         Hook::listen('view_filter', $content);
+        if (APP_DEBUG && C('PARSE_VAR')) {
+            // debug模式时，将后台分配变量输出到浏览器控制台
+            $parseVar = empty($this->tVar) ? json_encode(array()) : json_encode($this->tVar);
+            $content  = $content . '<script type="text/javascript">var PARSE_VAR = ' . $parseVar . ';</script>';
+        }
         // 输出模板文件
         return $content;
     }
@@ -165,7 +183,8 @@ class View
 
         // 获取当前模块
         $module = MODULE_NAME;
-        if (strpos($template, '@')) { // 跨模块调用模版文件
+        if (strpos($template, '@')) {
+            // 跨模块调用模版文件
             list($module, $template) = explode('@', $template);
         }
         // 获取当前主题的模版路径
@@ -224,12 +243,14 @@ class View
      */
     private function getTemplateTheme()
     {
-        if ($this->theme) { // 指定模板主题
+        if ($this->theme) {
+            // 指定模板主题
             $theme = $this->theme;
         } else {
             /* 获取模板主题名称 */
             $theme = C('DEFAULT_THEME');
-            if (C('TMPL_DETECT_THEME')) { // 自动侦测模板主题
+            if (C('TMPL_DETECT_THEME')) {
+                // 自动侦测模板主题
                 $t = C('VAR_TEMPLATE');
                 if (isset($_GET[$t])) {
                     $theme = $_GET[$t];

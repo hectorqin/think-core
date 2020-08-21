@@ -231,11 +231,13 @@ class AdvModel extends Model
      */
     public function getN($position = 0, $options = array())
     {
-        if ($position >= 0) { // 正向查找
+        if ($position >= 0) {
+            // 正向查找
             $options['limit'] = $position . ',1';
             $list             = $this->select($options);
             return $list ? $list[0] : false;
-        } else { // 逆序查找
+        } else {
+            // 逆序查找
             $list = $this->select($options);
             return $list ? $list[count($list) - abs($position)] : false;
         }

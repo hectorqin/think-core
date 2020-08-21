@@ -17,7 +17,7 @@ class BrowserCheckBehavior
 {
     public function run(&$params)
     {
-        if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        if ('GET' == $_SERVER['REQUEST_METHOD']) {
             //    启用页面防刷新机制
             $guid = md5($_SERVER['PHP_SELF']);
             // 浏览器防刷新的时间间隔（秒） 默认为10

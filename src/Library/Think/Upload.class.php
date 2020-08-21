@@ -87,7 +87,7 @@ class Upload
     {
         if (isset($this->config[$name])) {
             $this->config[$name] = $value;
-            if ($name == 'driverConfig') {
+            if ('driverConfig' == $name) {
                 //改变驱动配置后重置上传驱动
                 //注意：必须选改变驱动然后再改变驱动配置
                 $this->setDriver();
@@ -209,7 +209,7 @@ class Upload
             $ext = strtolower($file['ext']);
             if (in_array($ext, array('gif', 'jpg', 'jpeg', 'bmp', 'png', 'swf'))) {
                 $imginfo = getimagesize($file['tmp_name']);
-                if (empty($imginfo) || ($ext == 'gif' && empty($imginfo['bits']))) {
+                if (empty($imginfo) || ('gif' == $ext && empty($imginfo['bits']))) {
                     $this->error = '非法图像文件！';
                     continue;
                 }
@@ -384,7 +384,8 @@ class Upload
     private function getSaveName($file)
     {
         $rule = $this->saveName;
-        if (empty($rule)) { //保持文件名不变
+        if (empty($rule)) {
+            //保持文件名不变
             /* 解决pathinfo中文文件名BUG */
             $filename = substr(pathinfo("_{$file['name']}", PATHINFO_FILENAME), 1);
             $savename = $filename;
@@ -430,14 +431,16 @@ class Upload
     private function getName($rule, $filename)
     {
         $name = '';
-        if (is_array($rule)) { //数组规则
+        if (is_array($rule)) {
+            //数组规则
             $func  = $rule[0];
             $param = (array) $rule[1];
             foreach ($param as &$value) {
                 $value = str_replace('__FILE__', $filename, $value);
             }
             $name = call_user_func_array($func, $param);
-        } elseif (is_string($rule)) { //字符串规则
+        } elseif (is_string($rule)) {
+            //字符串规则
             if (function_exists($rule)) {
                 $name = call_user_func($rule);
             } else {

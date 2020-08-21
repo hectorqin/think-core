@@ -15,7 +15,6 @@ namespace Think;
  */
 abstract class Controller
 {
-
     /**
      * 视图实例对象
      * @var view
@@ -286,7 +285,8 @@ abstract class Controller
      */
     private function dispatchJump($message, $status = 1, $jumpUrl = '', $ajax = false)
     {
-        if (true === $ajax || IS_AJAX) { // AJAX提交
+        if (true === $ajax || IS_AJAX) {
+            // AJAX提交
             $data           = is_array($ajax) ? $ajax : array();
             $data['info']   = $message;
             $data['status'] = $status;
@@ -314,7 +314,8 @@ abstract class Controller
         $this->assign('status', $status); // 状态
         //保证输出不受静态缓存影响
         C('HTML_CACHE_ON', false);
-        if ($status) { //发送成功信息
+        if ($status) {
+            //发送成功信息
             $this->assign('message', $message); // 提示信息
             // 成功操作后默认停留1秒
             if (!isset($this->waitSecond)) {

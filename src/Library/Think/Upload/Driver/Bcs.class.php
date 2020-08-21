@@ -175,13 +175,13 @@ class Bcs
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
 
-        if ($method == 'PUT' || $method == 'POST') {
+        if ('PUT' == $method || 'POST' == $method) {
             curl_setopt($ch, CURLOPT_POST, 1);
         } else {
             curl_setopt($ch, CURLOPT_POST, 0);
         }
 
-        if ($method == 'HEAD') {
+        if ('HEAD' == $method) {
             curl_setopt($ch, CURLOPT_NOBODY, true);
         }
 
@@ -190,8 +190,8 @@ class Bcs
         curl_close($ch);
         list($header, $body) = explode("\r\n\r\n", $response, 2);
 
-        if ($status == 200) {
-            if ($method == 'GET') {
+        if (200 == $status) {
+            if ('GET' == $method) {
                 return $body;
             } else {
                 $data = $this->response($header);

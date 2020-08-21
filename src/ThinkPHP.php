@@ -13,6 +13,12 @@
 // ThinkPHP公共入口文件
 //----------------------------------
 
+// 依赖composer加载
+if (!class_exists('\\Composer\\Autoload\\ClassLoader')) {
+    die("请先加载composer");
+}
+
+
 // 记录开始运行时间
 $GLOBALS['_beginTime'] = microtime(true);
 // 记录内存初始使用
@@ -22,7 +28,7 @@ if (MEMORY_LIMIT_ON) {
 }
 
 // 版本信息
-const THINK_VERSION = '3.2.3';
+const THINK_VERSION = '3.2.5';
 
 // URL 模式定义
 const URL_COMMON   = 0; //普通模式
@@ -34,13 +40,14 @@ const URL_COMPAT   = 3; // 兼容模式
 const EXT = '.class.php';
 
 // 系统常量定义
-defined('BASE_PATH') or define('BASE_PATH', dirname(__DIR__) . '/');
+defined('BASE_PATH') or define('BASE_PATH', dirname(__DIR__, 3) . '/');
 defined('THINK_PATH') or define('THINK_PATH', __DIR__ . '/');
 defined('APP_PATH') or define('APP_PATH', dirname($_SERVER['SCRIPT_FILENAME']) . '/');
 defined('APP_STATUS') or define('APP_STATUS', ''); // 应用状态 加载对应的配置文件
 defined('APP_DEBUG') or define('APP_DEBUG', false); // 是否调试模式
 
-if (function_exists('saeAutoLoader')) { // 自动识别SAE环境
+if (function_exists('saeAutoLoader')) {
+// 自动识别SAE环境
     defined('APP_MODE') or define('APP_MODE', 'sae');
     defined('STORAGE_TYPE') or define('STORAGE_TYPE', 'Sae');
 } else {
@@ -81,17 +88,16 @@ if (!IS_CLI) {
     // 当前文件名
     if (!defined('_PHP_FILE_')) {
         if (IS_CGI) {
-            //CGI/FASTCGI模式下
-            // $_temp  = explode('.php',$_SERVER['PHP_SELF']);
-            // define('_PHP_FILE_',    rtrim(str_replace($_SERVER['HTTP_HOST'],'',$_temp[0].'.php'),'/'));
-            define('_PHP_FILE_', rtrim($_SERVER['SCRIPT_NAME'], '/'));
+            // TODO CGI/FASTCGI模式下
+            $_temp = explode('.php', $_SERVER['PHP_SELF']);
+            define('_PHP_FILE_', rtrim(str_replace($_SERVER['HTTP_HOST'], '', $_temp[0] . '.php'), '/'));
         } else {
             define('_PHP_FILE_', rtrim($_SERVER['SCRIPT_NAME'], '/'));
         }
     }
     if (!defined('__ROOT__')) {
         $_root = rtrim(dirname(_PHP_FILE_), '/');
-        define('__ROOT__', (($_root == '/' || $_root == '\\') ? '' : $_root));
+        define('__ROOT__', (('/' == $_root || '\\' == $_root) ? '' : $_root));
     }
     // 多域名模板缓存、runtime缓存区分标识
     defined('MULTI_DOMAIN_MARKING') or define('MULTI_DOMAIN_MARKING', (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'undefined') . str_replace("/", "_", __ROOT__) . '_');

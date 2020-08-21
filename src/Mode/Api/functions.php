@@ -117,14 +117,16 @@ function G($start, $end = '', $dec = 4)
 {
     static $_info = array();
     static $_mem  = array();
-    if (is_float($end)) { // 记录时间
+    if (is_float($end)) {
+        // 记录时间
         $_info[$start] = $end;
-    } elseif (!empty($end)) { // 统计时间和内存使用
+    } elseif (!empty($end)) {
+        // 统计时间和内存使用
         if (!isset($_info[$end])) {
             $_info[$end] = microtime(true);
         }
 
-        if (MEMORY_LIMIT_ON && $dec == 'm') {
+        if (MEMORY_LIMIT_ON && 'm' == $dec) {
             if (!isset($_mem[$end])) {
                 $_mem[$end] = memory_get_usage();
             }
@@ -134,7 +136,8 @@ function G($start, $end = '', $dec = 4)
             return number_format(($_info[$end] - $_info[$start]), $dec);
         }
 
-    } else { // 记录时间和内存使用
+    } else {
+        // 记录时间和内存使用
         $_info[$start] = microtime(true);
         if (MEMORY_LIMIT_ON) {
             $_mem[$start] = memory_get_usage();
@@ -228,12 +231,15 @@ function compile($filename)
  */
 function I($name, $default = '', $filter = null, $datas = null)
 {
-    if (strpos($name, '/')) { // 指定修饰符
+    if (strpos($name, '/')) {
+        // 指定修饰符
         list($name, $type) = explode('/', $name, 2);
     }
-    if (strpos($name, '.')) { // 指定参数来源
+    if (strpos($name, '.')) {
+        // 指定参数来源
         list($method, $name) = explode('.', $name, 2);
-    } else { // 默认为自动判断
+    } else {
+        // 默认为自动判断
         $method = 'param';
     }
     switch (strtolower($method)) {
@@ -277,7 +283,8 @@ function I($name, $default = '', $filter = null, $datas = null)
         default:
             return null;
     }
-    if ('' == $name) { // 获取全部变量
+    if ('' == $name) {
+        // 获取全部变量
         $data    = $input;
         $filters = isset($filter) ? $filter : C('DEFAULT_FILTER');
         if ($filters) {
@@ -288,7 +295,8 @@ function I($name, $default = '', $filter = null, $datas = null)
                 $data = array_map_recursive($filter, $data); // 参数过滤
             }
         }
-    } elseif (isset($input[$name])) { // 取值操作
+    } elseif (isset($input[$name])) {
+        // 取值操作
         $data    = $input[$name];
         $filters = isset($filter) ? $filter : C('DEFAULT_FILTER');
         if ($filters) {
@@ -333,7 +341,8 @@ function I($name, $default = '', $filter = null, $datas = null)
                     break;
             }
         }
-    } else { // 变量默认值
+    } else {
+        // 变量默认值
         $data = isset($default) ? $default : null;
     }
     is_array($data) && array_walk_recursive($data, 'think_filter');
@@ -376,7 +385,8 @@ function N($key, $step = 0, $save = false)
         $_num[$key] = $_num[$key] + (int) $step;
     }
 
-    if (false !== $save) { // 保存结果
+    if (false !== $save) {
+        // 保存结果
         S('N_' . $key, $_num[$key], $save);
     }
 }
@@ -461,7 +471,8 @@ function import($class, $baseUrl = '', $ext = EXT)
         } elseif (in_array($class_strut[0], array('Think', 'Org', 'Behavior', 'Com', 'Vendor')) || is_dir(LIB_PATH . $class_strut[0])) {
             // 系统类库包和第三方类库包
             $baseUrl = LIB_PATH;
-        } else { // 加载其他模块的类库
+        } else {
+            // 加载其他模块的类库
             $baseUrl = APP_PATH;
         }
     }
@@ -488,10 +499,12 @@ function load($name, $baseUrl = '', $ext = '.php')
 {
     $name = str_replace(array('.', '#'), array('/', '.'), $name);
     if (empty($baseUrl)) {
-        if (0 === strpos($name, '@/')) { //加载当前模块函数库
+        if (0 === strpos($name, '@/')) {
+            //加载当前模块函数库
             $baseUrl = MODULE_PATH . 'Common/';
             $name    = substr($name, 2);
-        } else { //加载其他模块函数库
+        } else {
+            //加载其他模块函数库
             $array   = explode('/', $name);
             $baseUrl = APP_PATH . array_shift($array) . '/Common/';
             $name    = implode('/', $array);
@@ -585,12 +598,14 @@ function M($name = '', $tablePrefix = '', $connection = '')
  */
 function parse_res_name($name, $layer, $level = 1)
 {
-    if (strpos($name, '://')) { // 指定扩展资源
+    if (strpos($name, '://')) {
+        // 指定扩展资源
         list($extend, $name) = explode('://', $name);
     } else {
         $extend = '';
     }
-    if (strpos($name, '/') && substr_count($name, '/') >= $level) { // 指定模块
+    if (strpos($name, '/') && substr_count($name, '/') >= $level) {
+        // 指定模块
         list($module, $name) = explode('/', $name, 2);
     } else {
         $module = MODULE_NAME;
@@ -601,7 +616,8 @@ function parse_res_name($name, $layer, $level = 1)
         $class .= '\\' . parse_name($name, 1);
     }
     // 导入资源类库
-    if ($extend) { // 扩展资源
+    if ($extend) {
+        // 扩展资源
         $class = $extend . '\\' . $class;
     }
     return $class . $layer;
@@ -618,7 +634,7 @@ function A($name, $layer = '', $level = '')
 {
     static $_action = array();
     $layer          = $layer ?: C('DEFAULT_C_LAYER');
-    $level          = $level ?: ($layer == C('DEFAULT_C_LAYER') ? C('CONTROLLER_LEVEL') : 1);
+    $level          = $level ?: (C('DEFAULT_C_LAYER') == $layer ? C('CONTROLLER_LEVEL') : 1);
     if (isset($_action[$name . $layer])) {
         return $_action[$name . $layer];
     }
@@ -706,10 +722,10 @@ function strip_whitespace($content)
                 case T_END_HEREDOC:
                     $stripStr .= "THINK;\n";
                     for ($k = $i + 1; $k < $j; $k++) {
-                        if (is_string($tokens[$k]) && $tokens[$k] == ';') {
+                        if (is_string($tokens[$k]) && ';' == $tokens[$k]) {
                             $i = $k;
                             break;
-                        } else if ($tokens[$k][0] == T_CLOSE_TAG) {
+                        } else if (T_CLOSE_TAG == $tokens[$k][0]) {
                             break;
                         }
                     }
@@ -733,7 +749,7 @@ function strip_whitespace($content)
  */
 function dump($var, $echo = true, $label = null, $strict = true)
 {
-    $label = ($label === null) ? '' : rtrim($label) . ' ';
+    $label = (null === $label) ? '' : rtrim($label) . ' ';
     if (!$strict) {
         if (ini_get('html_errors')) {
             $output = print_r($var, true);
@@ -785,7 +801,7 @@ function redirect($url, $time = 0, $msg = '')
         exit();
     } else {
         $str = "<meta http-equiv='Refresh' content='{$time};URL={$url}'>";
-        if ($time != 0) {
+        if (0 != $time) {
             $str .= $msg;
         }
 
@@ -807,18 +823,23 @@ function S($name, $value = '', $options = null)
         // 缓存操作的同时初始化
         $type  = isset($options['type']) ? $options['type'] : '';
         $cache = Think\Cache::getInstance($type, $options);
-    } elseif (is_array($name)) { // 缓存初始化
+    } elseif (is_array($name)) {
+        // 缓存初始化
         $type  = isset($name['type']) ? $name['type'] : '';
         $cache = Think\Cache::getInstance($type, $name);
         return $cache;
-    } elseif (empty($cache)) { // 自动初始化
+    } elseif (empty($cache)) {
+        // 自动初始化
         $cache = Think\Cache::getInstance();
     }
-    if ('' === $value) { // 获取缓存
+    if ('' === $value) {
+        // 获取缓存
         return $cache->get($name);
-    } elseif (is_null($value)) { // 删除缓存
+    } elseif (is_null($value)) {
+        // 删除缓存
         return $cache->rm($name);
-    } else { // 缓存数据
+    } else {
+        // 缓存数据
         if (is_array($options)) {
             $expire = isset($options['expire']) ? $options['expire'] : null;
         } else {
@@ -945,7 +966,8 @@ function data_to_xml($data, $item = 'item', $id = 'id')
 function session($name, $value = '')
 {
     $prefix = C('SESSION_PREFIX');
-    if (is_array($name)) { // session初始化 在session_start 之前调用
+    if (is_array($name)) {
+        // session初始化 在session_start 之前调用
         if (isset($name['prefix'])) {
             C('SESSION_PREFIX', $name['prefix']);
         }
@@ -955,7 +977,8 @@ function session($name, $value = '')
         } elseif (isset($name['id'])) {
             session_id($name['id']);
         }
-        if ('common' != APP_MODE) { // 其它模式可能不支持
+        if ('common' != APP_MODE) {
+            // 其它模式可能不支持
             ini_set('session.auto_start', 0);
         }
         if (isset($name['name'])) {
@@ -994,7 +1017,8 @@ function session($name, $value = '')
             C('SESSION_TYPE', $name['type']);
         }
 
-        if (C('SESSION_TYPE')) { // 读取session驱动
+        if (C('SESSION_TYPE')) {
+            // 读取session驱动
             $type   = C('SESSION_TYPE');
             $class  = strpos($type, '\\') ? $type : 'Think\\Session\\Driver\\' . ucwords(strtolower($type));
             $hander = new $class();
@@ -1012,33 +1036,42 @@ function session($name, $value = '')
         }
 
     } elseif ('' === $value) {
-        if (0 === strpos($name, '[')) { // session 操作
-            if ('[pause]' == $name) { // 暂停session
+        if (0 === strpos($name, '[')) {
+            // session 操作
+            if ('[pause]' == $name) {
+                // 暂停session
                 session_write_close();
-            } elseif ('[start]' == $name) { // 启动session
+            } elseif ('[start]' == $name) {
+                // 启动session
                 session_start();
-            } elseif ('[destroy]' == $name) { // 销毁session
+            } elseif ('[destroy]' == $name) {
+                // 销毁session
                 $_SESSION = array();
                 session_unset();
                 session_destroy();
-            } elseif ('[regenerate]' == $name) { // 重新生成id
+            } elseif ('[regenerate]' == $name) {
+                // 重新生成id
                 session_regenerate_id();
             }
-        } elseif (0 === strpos($name, '?')) { // 检查session
+        } elseif (0 === strpos($name, '?')) {
+            // 检查session
             $name = substr($name, 1);
-            if (strpos($name, '.')) { // 支持数组
+            if (strpos($name, '.')) {
+                // 支持数组
                 list($name1, $name2) = explode('.', $name);
                 return $prefix ? isset($_SESSION[$prefix][$name1][$name2]) : isset($_SESSION[$name1][$name2]);
             } else {
                 return $prefix ? isset($_SESSION[$prefix][$name]) : isset($_SESSION[$name]);
             }
-        } elseif (is_null($name)) { // 清空session
+        } elseif (is_null($name)) {
+            // 清空session
             if ($prefix) {
                 unset($_SESSION[$prefix]);
             } else {
                 $_SESSION = array();
             }
-        } elseif ($prefix) { // 获取session
+        } elseif ($prefix) {
+            // 获取session
             if (strpos($name, '.')) {
                 list($name1, $name2) = explode('.', $name);
                 return isset($_SESSION[$prefix][$name1][$name2]) ? $_SESSION[$prefix][$name1][$name2] : null;
@@ -1053,13 +1086,15 @@ function session($name, $value = '')
                 return isset($_SESSION[$name]) ? $_SESSION[$name] : null;
             }
         }
-    } elseif (is_null($value)) { // 删除session
+    } elseif (is_null($value)) {
+        // 删除session
         if ($prefix) {
             unset($_SESSION[$prefix][$name]);
         } else {
             unset($_SESSION[$name]);
         }
-    } else { // 设置session
+    } else {
+        // 设置session
         if ($prefix) {
             if (!is_array($_SESSION[$prefix])) {
                 $_SESSION[$prefix] = array();
@@ -1105,7 +1140,8 @@ function cookie($name, $value = '', $option = null)
 
         // 要删除的cookie前缀，不指定则删除config设置的指定前缀
         $prefix = empty($value) ? $config['prefix'] : $value;
-        if (!empty($prefix)) { // 如果前缀为空字符串将不作处理直接返回
+        if (!empty($prefix)) {
+            // 如果前缀为空字符串将不作处理直接返回
             foreach ($_COOKIE as $key => $val) {
                 if (0 === stripos($key, $prefix)) {
                     setcookie($key, '', time() - 3600, $config['path'], $config['domain']);
@@ -1186,7 +1222,7 @@ function get_client_ip($type = 0)
 {
     $type      = $type ? 1 : 0;
     static $ip = null;
-    if ($ip !== null) {
+    if (null !== $ip) {
         return $ip[$type];
     }
 

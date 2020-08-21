@@ -15,7 +15,6 @@
  * 配置名称大小写任意，系统会统一转换成小写
  * 所有配置参数都可以在生效前动态改变
  */
-defined('THINK_PATH') or exit();
 $st = new SaeStorage();
 return array(
     //SAE下固定mysql配置

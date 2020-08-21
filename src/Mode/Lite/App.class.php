@@ -60,7 +60,8 @@ class App
     public static function exec()
     {
 
-        if (!preg_match('/^[A-Za-z](\/|\w)*$/', CONTROLLER_NAME)) { // 安全检测
+        if (!preg_match('/^[A-Za-z](\/|\w)*$/', CONTROLLER_NAME)) {
+            // 安全检测
             $module = false;
         } else {
             //创建控制器实例

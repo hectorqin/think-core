@@ -68,7 +68,7 @@ abstract class Controller
             case 'JSON':
                 // 返回JSON数据格式到客户端 包含状态信息
                 header('Content-Type:application/json; charset=utf-8');
-                exit(json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
+                exit(json_encode($data));
             case 'XML':
                 // 返回xml格式数据
                 header('Content-Type:text/xml; charset=utf-8');

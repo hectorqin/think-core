@@ -44,14 +44,17 @@ class CheckLangBehavior
             if (isset($_GET[$varLang])) {
                 $langSet = $_GET[$varLang]; // url中设置了语言变量
                 cookie('think_language', $langSet, 3600);
-            } elseif (cookie('think_language')) { // 获取上次用户的选择
+            } elseif (cookie('think_language')) {
+                // 获取上次用户的选择
                 $langSet = cookie('think_language');
-            } elseif (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) { // 自动侦测浏览器语言
+            } elseif (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+                // 自动侦测浏览器语言
                 preg_match('/^([a-z\d\-]+)/i', $_SERVER['HTTP_ACCEPT_LANGUAGE'], $matches);
                 $langSet = $matches[1];
                 cookie('think_language', $langSet, 3600);
             }
-            if (false === stripos($langList, $langSet)) { // 非法语言参数
+            if (false === stripos($langList, $langSet)) {
+                // 非法语言参数
                 $langSet = C('DEFAULT_LANG');
             }
         }

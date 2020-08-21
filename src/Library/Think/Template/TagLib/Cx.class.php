@@ -365,12 +365,12 @@ class Cx extends TagLib
             $value = '"' . $value . '"';
             $str   = 'explode(\',\',' . $value . ')';
         }
-        if ($type == 'between') {
+        if ('between' == $type) {
             $parseStr = '<?php $_RANGE_VAR_=' . $str . ';if(' . $name . '>= $_RANGE_VAR_[0] && ' . $name . '<= $_RANGE_VAR_[1]):?>' . $content . '<?php endif; ?>';
-        } elseif ($type == 'notbetween') {
+        } elseif ('notbetween' == $type) {
             $parseStr = '<?php $_RANGE_VAR_=' . $str . ';if(' . $name . '<$_RANGE_VAR_[0] || ' . $name . '>$_RANGE_VAR_[1]):?>' . $content . '<?php endif; ?>';
         } else {
-            $fun      = ($type == 'in') ? 'in_array' : '!in_array';
+            $fun      = ('in' == $type) ? 'in_array' : '!in_array';
             $parseStr = '<?php if(' . $fun . '((' . $name . '), ' . $str . ')): ?>' . $content . '<?php endif; ?>';
         }
         return $parseStr;

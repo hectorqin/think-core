@@ -12,7 +12,6 @@ namespace Think\Cache\Driver;
 
 use Think\Cache;
 
-defined('THINK_PATH') or exit();
 /**
  * Memcache缓存驱动
  * @category   Extend

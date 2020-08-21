@@ -44,7 +44,8 @@ class RestController extends Controller
     public function __construct()
     {
         // 资源类型检测
-        if ('' == __EXT__) { // 自动检测资源类型
+        if ('' == __EXT__) {
+            // 自动检测资源类型
             $this->_type = $this->getAcceptType();
         } elseif (!in_array(__EXT__, $this->allowType)) {
             // 资源类型非法 则用默认资源类型访问
@@ -74,7 +75,8 @@ class RestController extends Controller
     public function __call($method, $args)
     {
         if (0 === strcasecmp($method, ACTION_NAME . C('ACTION_SUFFIX'))) {
-            if (method_exists($this, $method . '_' . $this->_method . '_' . $this->_type)) { // RESTFul方法支持
+            if (method_exists($this, $method . '_' . $this->_method . '_' . $this->_type)) {
+                // RESTFul方法支持
                 $fun = $method . '_' . $this->_method . '_' . $this->_type;
                 App::invokeAction($this, $fun);
             } elseif ($this->_method == $this->defaultMethod && method_exists($this, $method . '_' . $this->_type)) {
@@ -102,6 +104,7 @@ class RestController extends Controller
     protected function getAcceptType()
     {
         $type = array(
+            'html' => 'text/html,application/xhtml+xml,*/*',
             'xml'  => 'application/xml,text/xml,application/x-xml',
             'json' => 'application/json,text/x-json,application/jsonrequest,text/json',
             'js'   => 'text/javascript,application/javascript,application/x-javascript',
@@ -115,9 +118,11 @@ class RestController extends Controller
             'jpg'  => 'image/jpg,image/jpeg,image/pjpeg',
             'gif'  => 'image/gif',
             'csv'  => 'text/csv',
-            'html' => 'text/html,application/xhtml+xml,*/*',
         );
 
+        if (!isset($_SERVER['HTTP_ACCEPT'])) {
+            return false;
+        }
         foreach ($type as $key => $val) {
             $array = explode(',', $val);
             foreach ($array as $k => $v) {
@@ -201,9 +206,14 @@ class RestController extends Controller
             return '';
         }
 
-        if ('json' == $type) {
+        if('json' == $type) {
             // 返回JSON数据格式到客户端 包含状态信息
-            $data = json_encode($data);
+            if(version_compare(PHP_VERSION,'5.4.0','<')) {
+                $this->arrayRecursive($data, 'urlencode', true);
+                $data = urldecode(json_encode($data));
+            } else {
+                $data = json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+            }
         } elseif ('xml' == $type) {
             // 返回xml格式数据
             $data = xml_encode($data);
@@ -213,6 +223,39 @@ class RestController extends Controller
         $this->setContentType($type);
         //header('Content-Length: ' . strlen($data));
         return $data;
+    }
+
+    /**************************************************************
+     *
+     *    使用特定function对数组中所有元素做处理
+     *    @param  string|array  &$array     要处理的字符串或者数组
+     *    @param  string  $function   要执行的函数
+     *    @return boolean $apply_to_keys_also     是否也应用到key上
+     *    @access protected
+     *
+     *************************************************************/
+    protected function arrayRecursive(&$array, $function, $apply_to_keys_also = false)
+    {
+        static $recursive_counter = 0;
+        if (++$recursive_counter > 1000) {
+            die('possible deep recursion attack');
+        }
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $this->arrayRecursive($array[$key], $function, $apply_to_keys_also);
+            } elseif(is_string($value)) {
+                $array[$key] = $function($value);
+            }
+
+            if ($apply_to_keys_also && is_string($key)) {
+                $new_key = $function($key);
+                if ($new_key != $key) {
+                    $array[$new_key] = $array[$key];
+                    unset($array[$key]);
+                }
+            }
+        }
+        $recursive_counter--;
     }
 
     /**

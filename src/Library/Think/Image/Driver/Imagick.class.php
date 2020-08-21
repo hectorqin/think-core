@@ -84,9 +84,9 @@ class Imagick
             $this->img->setImageFormat($type);
         }
 
-        //JPEG图像设置隔行扫描
-        if ('jpeg' == $type || 'jpg' == $type) {
-            $this->img->setImageInterlaceScheme(1);
+        //JPEG\PNG 图像进行渐进渲染
+        if ('jpeg' == $type || 'jpg' == $type || 'png' == $type) {
+            $this->img->setImageInterlaceScheme(\Imagick::INTERLACE_PLANE);
         }
 
         // 设置图像质量
@@ -213,7 +213,7 @@ class Imagick
 
         //裁剪
         $info = $this->info;
-        if ($x != 0 || $y != 0 || $w != $info['width'] || $h != $info['height']) {
+        if (0 != $x || 0 != $y || $w != $info['width'] || $h != $info['height']) {
             $img->cropImage($w, $h, $x, $y);
             $img->setImagePage($w, $h, 0, 0); //调整画布和图片一致
         }

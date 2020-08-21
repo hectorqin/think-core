@@ -303,7 +303,7 @@ class RelationModel extends Model
                     // 获取关联model对象
                     $model       = D($mappingClass);
                     $mappingData = isset($data[$mappingName]) ? $data[$mappingName] : false;
-                    if (!empty($mappingData) || $opType == 'DEL') {
+                    if (!empty($mappingData) || 'DEL' == $opType) {
                         switch ($mappingType) {
                             case self::HAS_ONE:
                                 switch (strtoupper($opType)) {
@@ -335,10 +335,12 @@ class RelationModel extends Model
                                         $model->startTrans();
                                         $pk = $model->getPk();
                                         foreach ($mappingData as $vo) {
-                                            if (isset($vo[$pk])) { // 更新数据
+                                            if (isset($vo[$pk])) {
+                                                // 更新数据
                                                 $mappingCondition = "$pk ={$vo[$pk]}";
                                                 $result           = $model->where($mappingCondition)->save($vo);
-                                            } else { // 新增数据
+                                            } else {
+                                                // 新增数据
                                                 $vo[$mappingFk] = $data[$mappingKey];
                                                 $result         = $model->add($vo);
                                             }

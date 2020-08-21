@@ -12,7 +12,6 @@ namespace Think\Cache\Driver;
 
 use Think\Cache;
 
-defined('THINK_PATH') or exit();
 /**
  * Sqlite缓存驱动
  */

@@ -44,9 +44,11 @@ class Hook
      */
     public static function import($data, $recursive = true)
     {
-        if (!$recursive) { // 覆盖导入
+        if (!$recursive) {
+            // 覆盖导入
             self::$tags = array_merge(self::$tags, $data);
-        } else { // 合并导入
+        } else {
+            // 合并导入
             foreach ($data as $tag => $val) {
                 if (!isset(self::$tags[$tag])) {
                     self::$tags[$tag] = array();
@@ -104,7 +106,8 @@ class Hook
                     return;
                 }
             }
-            if (APP_DEBUG) { // 记录行为的执行日志
+            if (APP_DEBUG) {
+                // 记录行为的执行日志
                 trace('[ ' . $tag . ' ] --END-- [ RunTime:' . G($tag . 'Start', $tag . 'End', 6) . 's ]', '', 'INFO');
             }
         }

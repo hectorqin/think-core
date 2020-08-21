@@ -280,7 +280,8 @@ class Html extends TagLib
         if (!empty($key)) {
             $parseStr .= '<th width="12">No</th>';
         }
-        foreach ($fields as $field) { //显示指定的字段
+        foreach ($fields as $field) {
+            //显示指定的字段
             $property = explode('|', $field[0]);
             $showname = explode('|', $field[1]);
             if (isset($showname[1])) {
@@ -290,7 +291,8 @@ class Html extends TagLib
             }
             $parseStr .= $showname[0] . '</th>';
         }
-        if (!empty($action)) { //如果指定显示操作功能列
+        if (!empty($action)) {
+            //如果指定显示操作功能列
             $parseStr .= '<th >操作</th>';
         }
         $parseStr .= '</tr>';
@@ -346,8 +348,10 @@ class Html extends TagLib
             $parseStr .= '</td>';
 
         }
-        if (!empty($action)) { //显示功能操作
-            if (!empty($actionlist[0])) { //显示指定的功能项
+        if (!empty($action)) {
+            //显示功能操作
+            if (!empty($actionlist[0])) {
+                //显示指定的功能项
                 $parseStr .= '<td>';
                 foreach ($actionlist as $val) {
                     if (strpos($val, ':')) {
@@ -388,9 +392,9 @@ class Html extends TagLib
         $pk         = empty($tag['pk']) ? 'id' : $tag['pk']; //主键名，默认为id
         $style      = $tag['style']; //样式名
         $name       = !empty($tag['name']) ? $tag['name'] : 'vo'; //Vo对象名
-        $action     = $tag['action'] == 'true' ? true : false; //是否显示功能操作
+        $action     = 'true' == $tag['action'] ? true : false; //是否显示功能操作
         $key        = !empty($tag['key']) ? true : false;
-        $sort       = $tag['sort'] == 'false' ? false : true;
+        $sort       = 'false' == $tag['sort'] ? false : true;
         $checkbox   = $tag['checkbox']; //是否显示Checkbox
         if (isset($tag['actionlist'])) {
             if (substr($tag['actionlist'], 0, 1) == '$') {
@@ -432,13 +436,15 @@ class Html extends TagLib
         foreach ($show as $val) {
             $fields[] = explode(':', $val);
         }
-        if (!empty($checkbox) && 'true' == strtolower($checkbox)) { //如果指定需要显示checkbox列
+        if (!empty($checkbox) && 'true' == strtolower($checkbox)) {
+            //如果指定需要显示checkbox列
             $parseStr .= '<th width="8"><input type="checkbox" id="check" onclick="CheckAll(\'' . $id . '\')"></th>';
         }
         if (!empty($key)) {
             $parseStr .= '<th width="12">No</th>';
         }
-        foreach ($fields as $field) { //显示指定的字段
+        foreach ($fields as $field) {
+            //显示指定的字段
             $property = explode('|', $field[0]);
             $showname = explode('|', $field[1]);
             if (isset($showname[1])) {
@@ -454,7 +460,8 @@ class Html extends TagLib
             }
 
         }
-        if (!empty($action)) { //如果指定显示操作功能列
+        if (!empty($action)) {
+            //如果指定显示操作功能列
             $parseStr .= '<th >操作</th>';
         }
 
@@ -464,7 +471,8 @@ class Html extends TagLib
             //    $parseStr .= 'onmouseover="over(event)" onmouseout="out(event)" onclick="change(event)" ';
         }
         $parseStr .= '>';
-        if (!empty($checkbox)) { //如果需要显示checkbox 则在每行开头显示checkbox
+        if (!empty($checkbox)) {
+            //如果需要显示checkbox 则在每行开头显示checkbox
             $parseStr .= '<td><input type="checkbox" name="key"	value="{$' . $name . '.' . $pk . '}"></td>';
         }
         if (!empty($key)) {
@@ -517,7 +525,8 @@ class Html extends TagLib
             $parseStr .= '</td>';
 
         }
-        if (!empty($action)) { //显示功能操作
+        if (!empty($action)) {
+            //显示功能操作
             if (!empty($actionlist[0])) { //显示指定的功能项
                 $parseStr .= '<td>';
                 foreach ($actionlist as $val) {
