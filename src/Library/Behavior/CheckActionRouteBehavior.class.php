@@ -34,13 +34,16 @@ class CheckActionRouteBehavior
             $regx = str_replace($depr, '/', $regx);
             $regx = substr_replace($regx, '', 0, strlen(__URL__));
             foreach ($routes as $rule => $route) {
-                if (0 === strpos($rule, '/') && preg_match($rule, $regx, $matches)) { // 正则路由
+                if (0 === strpos($rule, '/') && preg_match($rule, $regx, $matches)) {
+                    // 正则路由
                     return C('ACTION_NAME', $this->parseRegex($matches, $route, $regx));
-                } else { // 规则路由
+                } else {
+                    // 规则路由
                     $len1 = substr_count($regx, '/');
                     $len2 = substr_count($rule, '/');
                     if ($len1 >= $len2) {
-                        if ('$' == substr($rule, -1, 1)) { // 完整匹配
+                        if ('$' == substr($rule, -1, 1)) {
+                            // 完整匹配
                             if ($len1 != $len2) {
                                 continue;
                             } else {
@@ -65,7 +68,8 @@ class CheckActionRouteBehavior
         $m2    = explode('/', $rule);
         $match = true; // 是否匹配
         foreach ($m2 as $key => $val) {
-            if (':' == substr($val, 0, 1)) { // 动态变量
+            if (':' == substr($val, 0, 1)) {
+                // 动态变量
                 if (strpos($val, '\\')) {
                     $type = substr($val, -1);
                     if ('d' == $type && !is_numeric($m1[$key])) {
@@ -92,11 +96,13 @@ class CheckActionRouteBehavior
     private function parseUrl($url)
     {
         $var = array();
-        if (false !== strpos($url, '?')) { // 操作?参数1=值1&参数2=值2...
+        if (false !== strpos($url, '?')) {
+            // 操作?参数1=值1&参数2=值2...
             $info = parse_url($url);
             $path = $info['path'];
             parse_str($info['query'], $var);
-        } else { // 操作
+        } else {
+            // 操作
             $path = $url;
         }
         $var[C('VAR_ACTION')] = $path;
@@ -122,7 +128,8 @@ class CheckActionRouteBehavior
         $matches = array();
         $rule    = explode('/', $rule);
         foreach ($rule as $item) {
-            if (0 === strpos($item, ':')) { // 动态变量获取
+            if (0 === strpos($item, ':')) {
+                // 动态变量获取
                 if ($pos = strpos($item, '^')) {
                     $var = substr($item, 1, $pos - 1);
                 } elseif (strpos($item, '\\')) {
@@ -131,11 +138,13 @@ class CheckActionRouteBehavior
                     $var = substr($item, 1);
                 }
                 $matches[$var] = array_shift($paths);
-            } else { // 过滤URL中的静态变量
+            } else {
+                // 过滤URL中的静态变量
                 array_shift($paths);
             }
         }
-        if (0 === strpos($url, '/') || 0 === strpos($url, 'http')) { // 路由重定向跳转
+        if (0 === strpos($url, '/') || 0 === strpos($url, 'http')) {
+            // 路由重定向跳转
             if (strpos($url, ':')) { // 传递动态参数
                 $values = array_values($matches);
                 $url    = preg_replace('/:(\d+)/e', '$values[\\1-1]', $url);
@@ -182,7 +191,8 @@ class CheckActionRouteBehavior
         // 获取路由地址规则
         $url = is_array($route) ? $route[0] : $route;
         $url = preg_replace('/:(\d+)/e', '$matches[\\1]', $url);
-        if (0 === strpos($url, '/') || 0 === strpos($url, 'http')) { // 路由重定向跳转
+        if (0 === strpos($url, '/') || 0 === strpos($url, 'http')) {
+            // 路由重定向跳转
             header("Location: $url", true, (is_array($route) && isset($route[1])) ? $route[1] : 301);
             exit;
         } else {

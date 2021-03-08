@@ -72,7 +72,8 @@ class MongoModel extends Model
     {
         // 缓存不存在则查询数据表信息
         $fields = $this->db->getFields();
-        if (!$fields) { // 暂时没有数据无法获取字段信息 下次查询
+        if (!$fields) {
+            // 暂时没有数据无法获取字段信息 下次查询
             return false;
         }
         $this->fields = array_keys($fields);
@@ -98,7 +99,7 @@ class MongoModel extends Model
     {
         $pk = $this->getPk();
         // 根据主键类型处理主键数据
-        if (isset($data[$pk]) && $this->_idType == self::TYPE_OBJECT) {
+        if (isset($data[$pk]) && self::TYPE_OBJECT == $this->_idType) {
             $data[$pk] = new \MongoId($data[$pk]);
         }
     }
@@ -147,7 +148,8 @@ class MongoModel extends Model
         if (empty($pk)) {
             $pk = $this->getPk();
         }
-        return $this->db->getMongoNextId($pk);
+        $options = $this->_parseOptions();
+        return $this->db->getMongoNextId($pk,$options);
     }
 
     /**
@@ -193,10 +195,11 @@ class MongoModel extends Model
     protected function _before_insert(&$data, $options)
     {
         // 写入数据到数据库
-        if ($this->_autoinc && $this->_idType == self::TYPE_INT) { // 主键自动增长
+        if ($this->_autoinc && self::TYPE_INT == $this->_idType) {
+            // 主键自动增长
             $pk = $this->getPk();
             if (!isset($data[$pk])) {
-                $data[$pk] = $this->db->getMongoNextId($pk);
+                $data[$pk] = $this->db->getMongoNextId($pk, $options);
             }
         }
     }
@@ -230,9 +233,49 @@ class MongoModel extends Model
     protected function _options_filter(&$options)
     {
         $id = $this->getPk();
-        if (isset($options['where'][$id]) && is_scalar($options['where'][$id]) && $this->_idType == self::TYPE_OBJECT) {
+        if (isset($options['where'][$id]) && is_scalar($options['where'][$id]) && self::TYPE_OBJECT == $this->_idType) {
             $options['where'][$id] = new \MongoId($options['where'][$id]);
         }
+    }
+
+    /**
+     * 查询多行数据
+     * @access public
+     * @param mixed $options 表达式参数
+     * @return mixed
+     */
+    public function select($options = array())
+    {
+        if( is_numeric($options) || is_string($options)) {
+            $id = $this->getPk();
+            $where[$id] = $options;
+            $options = array();
+            $options['where'] = $where;
+        }
+        // 分析表达式
+        $options = $this->_parseOptions($options);
+        $result = $this->db->select($options);
+        if(false === $result) {
+            return false;
+        }
+        
+        if(empty($result)) {// 查询结果为空
+            return null;
+        }
+        else{
+            $this->checkMongoId($result);
+        }
+        
+        //$result是以主键为key的，所以需要处理一下
+        $data = array();
+        foreach($result as $v){
+            $data[] = $v;
+        }
+        
+        $this->data = $data;
+        $this->_after_select($this->data, $options);
+        
+        return $this->data;
     }
 
     /**
@@ -255,7 +298,8 @@ class MongoModel extends Model
         if (false === $result) {
             return false;
         }
-        if (empty($result)) { // 查询结果为空
+        if (empty($result)) {
+            // 查询结果为空
             return null;
         } else {
             $this->checkMongoId($result);
@@ -300,7 +344,8 @@ class MongoModel extends Model
     {
         $options['field'] = $field;
         $options          = $this->_parseOptions($options);
-        if (strpos($field, ',')) { // 多字段
+        if (strpos($field, ',')) {
+            // 多字段
             if (is_numeric($sepa)) { // 限定数量
                 $options['limit'] = $sepa;
                 $sepa             = null; // 重置为null 返回数组
@@ -325,7 +370,8 @@ class MongoModel extends Model
             }
         } else {
             // 返回数据个数
-            if (true !== $sepa) { // 当sepa指定为true的时候 返回所有数据
+            if (true !== $sepa) {
+                // 当sepa指定为true的时候 返回所有数据
                 $options['limit'] = is_numeric($sepa) ? $sepa : 1;
             } // 查找符合的记录
             $result = $this->db->select($options);

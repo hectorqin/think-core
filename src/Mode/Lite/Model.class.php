@@ -70,7 +70,8 @@ class Model
         $this->_initialize();
         // 获取模型名称
         if (!empty($name)) {
-            if (strpos($name, '.')) { // 支持 数据库名.模型名的 定义
+            if (strpos($name, '.')) {
+                // 支持 数据库名.模型名的 定义
                 list($this->dbName, $this->name) = explode('.', $name);
             } else {
                 $this->name = $name;
@@ -79,7 +80,8 @@ class Model
             $this->name = $this->getModelName();
         }
         // 设置表前缀
-        if (is_null($tablePrefix)) { // 前缀为Null表示没有前缀
+        if (is_null($tablePrefix)) {
+            // 前缀为Null表示没有前缀
             $this->tablePrefix = '';
         } elseif ('' != $tablePrefix) {
             $this->tablePrefix = $tablePrefix;
@@ -130,7 +132,8 @@ class Model
         // 缓存不存在则查询数据表信息
         $this->db->setModel($this->name);
         $fields = $this->db->getFields($this->getTableName());
-        if (!$fields) { // 无法获取字段信息
+        if (!$fields) {
+            // 无法获取字段信息
             return false;
         }
         $this->fields = array_keys($fields);
@@ -140,7 +143,7 @@ class Model
             $type[$key] = $val['type'];
             if ($val['primary']) {
                 // 增加复合主键支持
-                if (isset($this->fields['_pk']) && $this->fields['_pk'] != null) {
+                if (isset($this->fields['_pk']) && null != $this->fields['_pk']) {
                     if (is_string($this->fields['_pk'])) {
                         $this->pk            = array($this->fields['_pk']);
                         $this->fields['_pk'] = $this->pk;
@@ -241,7 +244,8 @@ class Model
             $name         = parse_name(substr($method, 10));
             $where[$name] = $args[0];
             return $this->where($where)->getField($args[1]);
-        } elseif (isset($this->_scope[$method])) { // 命名范围的单独调用支持
+        } elseif (isset($this->_scope[$method])) {
+            // 命名范围的单独调用支持
             return $this->scope($method, $args[0]);
         } else {
             E(__CLASS__ . ':' . $method . L('_METHOD_NOT_EXIST_'));
@@ -497,7 +501,7 @@ class Model
                 }
 
             }
-            if ($count == count($pk)) {
+            if (count($pk) == $count) {
                 $i = 0;
                 foreach ($pk as $field) {
                     $where[$field] = $options[$i];
@@ -567,7 +571,7 @@ class Model
                 }
 
             }
-            if ($count == count($pk)) {
+            if (count($pk) == $count) {
                 $i = 0;
                 foreach ($pk as $field) {
                     $where[$field] = $options[$i];
@@ -577,7 +581,8 @@ class Model
             } else {
                 return false;
             }
-        } elseif (false === $options) { // 用于子查询 不查询只返回SQL
+        } elseif (false === $options) {
+            // 用于子查询 不查询只返回SQL
             $options = array();
             // 分析表达式
             $options = $this->_parseOptions($options);
@@ -598,7 +603,8 @@ class Model
         if (false === $resultSet) {
             return false;
         }
-        if (empty($resultSet)) { // 查询结果为空
+        if (empty($resultSet)) {
+            // 查询结果为空
             return null;
         }
 
@@ -608,7 +614,8 @@ class Model
 
         $resultSet = array_map(array($this, '_read_data'), $resultSet);
         $this->_after_select($resultSet, $options);
-        if (isset($options['index'])) { // 对数据集进行索引
+        if (isset($options['index'])) {
+            // 对数据集进行索引
             $index = explode(',', $options['index']);
             foreach ($resultSet as $result) {
                 $_key = $result[$index[0]];
@@ -751,7 +758,7 @@ class Model
                 }
 
             }
-            if ($count == count($pk)) {
+            if (count($pk) == $count) {
                 $i = 0;
                 foreach ($pk as $field) {
                     $where[$field] = $options[$i];
@@ -780,7 +787,8 @@ class Model
         if (false === $resultSet) {
             return false;
         }
-        if (empty($resultSet)) { // 查询结果为空
+        if (empty($resultSet)) {
+// 查询结果为空
             return null;
         }
         if (is_string($resultSet)) {
@@ -865,7 +873,8 @@ class Model
             }
         }
         $field = trim($field);
-        if (strpos($field, ',') && false !== $sepa) { // 多字段
+        if (strpos($field, ',') && false !== $sepa) {
+            // 多字段
             if (!isset($options['limit'])) {
                 $options['limit'] = is_numeric($sepa) ? $sepa : '';
             }
@@ -890,7 +899,8 @@ class Model
                 }
                 return $cols;
             }
-        } else { // 查找一条记录
+        } else {
+            // 查找一条记录
             // 返回数据个数
             if (true !== $sepa) { // 当sepa指定为true的时候 返回所有数据
                 $options['limit'] = is_numeric($sepa) ? $sepa : 1;
@@ -937,7 +947,8 @@ class Model
         }
 
         // 检测提交字段的合法性
-        if (isset($this->options['field'])) { // $this->field('field1,field2...')->create()
+        if (isset($this->options['field'])) {
+            // $this->field('field1,field2...')->create()
             $fields = $this->options['field'];
             unset($this->options['field']);
         }
@@ -948,7 +959,8 @@ class Model
         }
 
         // 验证完成生成数据对象
-        if ($this->autoCheckFields) { // 开启字段检测 则过滤非法字段数据
+        if ($this->autoCheckFields) {
+            // 开启字段检测 则过滤非法字段数据
             $fields = $this->getDbFields();
             foreach ($data as $key => $val) {
                 if (!in_array($key, $fields)) {
@@ -1008,7 +1020,7 @@ class Model
             case 'in': // 验证是否在某个指定范围之内 逗号分隔字符串或者数组
             case 'notin':
                 $range = is_array($rule) ? $rule : explode(',', $rule);
-                return $type == 'in' ? in_array($value, $range) : !in_array($value, $range);
+                return 'in' == $type ? in_array($value, $range) : !in_array($value, $range);
             case 'between': // 验证是否在某个范围
             case 'notbetween': // 验证是否不在某个范围
                 if (is_array($rule)) {
@@ -1017,16 +1029,18 @@ class Model
                 } else {
                     list($min, $max) = explode(',', $rule);
                 }
-                return $type == 'between' ? $value >= $min && $value <= $max : $value < $min || $value > $max;
+                return 'between' == $type ? $value >= $min && $value <= $max : $value < $min || $value > $max;
             case 'equal': // 验证是否等于某个值
             case 'notequal': // 验证是否等于某个值
-                return $type == 'equal' ? $value == $rule : $value != $rule;
+                return 'equal' == $type ? $value == $rule : $value != $rule;
             case 'length': // 验证长度
                 $length = mb_strlen($value, 'utf-8'); // 当前数据长度
-                if (strpos($rule, ',')) { // 长度区间
+                if (strpos($rule, ',')) {
+                    // 长度区间
                     list($min, $max) = explode(',', $rule);
                     return $length >= $min && $length <= $max;
-                } else { // 指定长度
+                } else {
+// 指定长度
                     return $length == $rule;
                 }
             case 'expire':
@@ -1089,7 +1103,8 @@ class Model
 
         if (!isset($this->_db[$linkNum]) || $force) {
             // 创建一个新的实例
-            if (!empty($config) && is_string($config) && false === strpos($config, '/')) { // 支持读取配置参数
+            if (!empty($config) && is_string($config) && false === strpos($config, '/')) {
+                // 支持读取配置参数
                 $config = C($config);
             }
             $this->_db[$linkNum] = Db::getInstance($config);
@@ -1122,7 +1137,8 @@ class Model
     {
         if (empty($this->name)) {
             $name = substr(get_class($this), 0, -strlen(C('DEFAULT_M_LAYER')));
-            if ($pos = strrpos($name, '\\')) { //有命名空间
+            if ($pos = strrpos($name, '\\')) {
+                //有命名空间
                 $this->name = substr($name, $pos + 1);
             } else {
                 $this->name = $name;
@@ -1244,7 +1260,8 @@ class Model
      */
     public function getDbFields()
     {
-        if (isset($this->options['table'])) { // 动态指定表名
+        if (isset($this->options['table'])) {
+            // 动态指定表名
             if (is_array($this->options['table'])) {
                 $table = key($this->options['table']);
             } else {
@@ -1414,10 +1431,12 @@ class Model
      */
     public function field($field, $except = false)
     {
-        if (true === $field) { // 获取全部字段
+        if (true === $field) {
+            // 获取全部字段
             $fields = $this->getDbFields();
             $field  = $fields ?: '*';
-        } elseif ($except) { // 字段排除
+        } elseif ($except) {
+            // 字段排除
             if (is_string($field)) {
                 $field = explode(',', $field);
             }
@@ -1444,7 +1463,8 @@ class Model
             } else {
                 return $this;
             }
-        } elseif (is_string($scope)) { // 支持多个命名范围调用 用逗号分割
+        } elseif (is_string($scope)) {
+            // 支持多个命名范围调用 用逗号分割
             $scopes  = explode(',', $scope);
             $options = array();
             foreach ($scopes as $name) {
@@ -1457,7 +1477,8 @@ class Model
             if (!empty($args) && is_array($args)) {
                 $options = array_merge($options, $args);
             }
-        } elseif (is_array($scope)) { // 直接传入命名范围定义
+        } elseif (is_array($scope)) {
+            // 直接传入命名范围定义
             $options = $scope;
         }
 

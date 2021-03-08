@@ -12,8 +12,6 @@ namespace Think\Cache\Driver;
 
 use Think\Cache;
 
-defined('THINK_PATH') or exit();
-
 /**
  * Redis缓存驱动
  * 要求安装phpredis扩展：https://github.com/nicolasff/phpredis
@@ -33,12 +31,11 @@ class Redis extends Cache
         $options = array_merge(array(
             'host'       => C('REDIS_HOST') ?: '127.0.0.1',
             'port'       => C('REDIS_PORT') ?: 6379,
+            'password'   => C('REDIS_AUTH') ?: '',
             'timeout'    => C('DATA_CACHE_TIMEOUT') ?: false,
+            'db'         => C('REDIS_CACHE_DB') ?: '',
             'persistent' => false,
         ), $options);
-        if (!isset($options['db']) && C('REDIS_CACHE_DB')) {
-            $options['db'] = C('REDIS_CACHE_DB');
-        }
 
         $this->options           = $options;
         $this->options['expire'] = isset($options['expire']) ? $options['expire'] : C('DATA_CACHE_TIME');
@@ -49,10 +46,10 @@ class Redis extends Cache
         $options['timeout'] === false ?
         $this->handler->$func($options['host'], $options['port']) :
         $this->handler->$func($options['host'], $options['port'], $options['timeout']);
-        if ($auth = C('REDIS_AUTH')) {
-            $this->handler->auth($auth);
+        if ('' != $options['password']) {
+            $this->handler->auth($options['password']);
         }
-        if (isset($options['db'])) {
+        if ('' != $options['db']) {
             $this->handler->select($options['db']);
         }
     }

@@ -81,7 +81,8 @@ class Mongo extends Driver
         }
 
         try {
-            if (!empty($db)) { // 传人Db则切换数据库
+            if (!empty($db)) {
+                // 传人Db则切换数据库
                 // 当前MongoDb对象
                 $this->_dbName = $db;
                 $this->_mongo  = $this->_linkID->selectDb($db);
@@ -98,7 +99,7 @@ class Mongo extends Driver
                 $this->debug(false);
                 $this->_collectionName = $collection; // 记录当前Collection名称
             }
-        } catch (MongoException $e) {
+        } catch (\MongoException $e) {
             E($e->getMessage());
         }
     }
@@ -121,7 +122,8 @@ class Mongo extends Driver
     public function command($command = array(), $options = array())
     {
         $cache = isset($options['cache']) ? $options['cache'] : false;
-        if ($cache) { // 查询缓存检测
+        if ($cache) {
+            // 查询缓存检测
             $key   = is_string($cache['key']) ? $cache['key'] : md5(serialize($command));
             $value = S($key, '', '', $cache['type']);
             if (false !== $value) {
@@ -140,7 +142,8 @@ class Mongo extends Driver
             $result = $this->_mongo->command($command);
             $this->debug(false);
 
-            if ($cache && $result['ok']) { // 查询缓存写入
+            if ($cache && $result['ok']) {
+                // 查询缓存写入
                 S($key, $result, $cache['expire'], $cache['type']);
             }
             return $result;
@@ -267,8 +270,11 @@ class Mongo extends Driver
      * @param string $pk 主键名
      * @return integer
      */
-    public function getMongoNextId($pk)
+    public function getMongoNextId($pk,$options=array())
     {
+        if (isset($options['table'])) {
+            $this->switchCollection($options['table']);
+        }
         if ($this->config['debug']) {
             $this->queryStr = $this->_dbName . '.' . $this->_collectionName . '.find({},{' . $pk . ':1}).sort({' . $pk . ':-1}).limit(1)';
         }
@@ -307,7 +313,7 @@ class Mongo extends Driver
         }
         try {
             $this->debug(true);
-            if (isset($options['limit']) && $options['limit'] == 1) {
+            if (isset($options['limit']) && 1 == $options['limit']) {
                 $multiple = array("multiple" => false);
             } else {
                 $multiple = array("multiple" => true);
@@ -413,7 +419,8 @@ class Mongo extends Driver
                 }
                 $_cursor = $_cursor->sort($order);
             }
-            if (isset($options['page'])) { // 根据页数计算limit
+            if (isset($options['page'])) {
+                // 根据页数计算limit
                 list($page, $length) = $options['page'];
                 $page                = $page > 0 ? $page : 1;
                 $length              = $length > 0 ? $length : (is_numeric($options['limit']) ? $options['limit'] : 20);
@@ -513,8 +520,12 @@ class Mongo extends Driver
         }
         try {
             $this->debug(true);
-            $option = array('condition' => $options['condition'], 'finalize' => $options['finalize'], 'maxTimeMS' => $options['maxTimeMS']);
-            $group  = $this->_collection->group($keys, $initial, $reduce, $options);
+
+            $option = array();
+            isset($options['condition'])&&$option['condition']=$options['condition'];
+            isset($options['finalize'])&&$option['finalize']=$options['condition'];
+            isset($options['maxTimeMS'])&&$option['maxTimeMS']=$options['condition'];
+            $group = $this->_collection->group($keys,$initial,$reduce,$option);
             $this->debug(false);
 
             if ($cache && $group['ok']) {
@@ -549,7 +560,8 @@ class Mongo extends Driver
         } catch (\MongoCursorException $e) {
             E($e->getMessage());
         }
-        if ($result) { // 存在数据则分析字段
+        if ($result) {
+            // 存在数据则分析字段
             $info = array();
             foreach ($result as $key => $val) {
                 $info[$key] = array(
@@ -617,7 +629,7 @@ class Mongo extends Driver
             if (is_array($val)) {
                 switch ($val[0]) {
                     case 'inc':
-                        $result['$inc'][$key] = (int) $val[1];
+                        $result['$inc'][$key] = (float) $val[1];
                         break;
                     case 'set':
                     case 'unset':
@@ -653,7 +665,7 @@ class Mongo extends Driver
             foreach ($array as $key => $val) {
                 $arr = explode(' ', trim($val));
                 if (isset($arr[1])) {
-                    $arr[1] = $arr[1] == 'asc' ? 1 : -1;
+                    $arr[1] = 'asc' == $arr[1] ? 1 : -1;
                 } else {
                     $arr[1] = 1;
                 }
@@ -759,7 +771,7 @@ class Mongo extends Driver
                 }
             }
         }
-        if ($_logic == '$and') {
+        if ('$and' == $_logic) {
             return $query;
         }
 
@@ -826,35 +838,46 @@ class Mongo extends Driver
         if (is_array($val)) {
             if (is_string($val[0])) {
                 $con = strtolower($val[0]);
-                if (in_array($con, array('neq', 'ne', 'gt', 'egt', 'gte', 'lt', 'lte', 'elt'))) { // 比较运算
+                if (in_array($con, array('neq', 'ne', 'gt', 'egt', 'gte', 'lt', 'lte', 'elt'))) {
+                    // 比较运算
                     $k           = '$' . $this->comparison[$con];
                     $query[$key] = array($k => $val[1]);
-                } elseif ('like' == $con) { // 模糊查询 采用正则方式
+                } elseif ('like' == $con) {
+                    // 模糊查询 采用正则方式
                     $query[$key] = new \MongoRegex("/" . $val[1] . "/");
-                } elseif ('mod' == $con) { // mod 查询
+                } elseif ('mod' == $con) {
+                    // mod 查询
                     $query[$key] = array('$mod' => $val[1]);
-                } elseif ('regex' == $con) { // 正则查询
+                } elseif ('regex' == $con) {
+                    // 正则查询
                     $query[$key] = new \MongoRegex($val[1]);
-                } elseif (in_array($con, array('in', 'nin', 'not in'))) { // IN NIN 运算
+                } elseif (in_array($con, array('in', 'nin', 'not in'))) {
+                    // IN NIN 运算
                     $data        = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
                     $k           = '$' . $this->comparison[$con];
                     $query[$key] = array($k => $data);
-                } elseif ('all' == $con) { // 满足所有指定条件
+                } elseif ('all' == $con) {
+                    // 满足所有指定条件
                     $data        = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
                     $query[$key] = array('$all' => $data);
-                } elseif ('between' == $con) { // BETWEEN运算
+                } elseif ('between' == $con) {
+                    // BETWEEN运算
                     $data        = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
                     $query[$key] = array('$gte' => $data[0], '$lte' => $data[1]);
                 } elseif ('not between' == $con) {
                     $data        = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
                     $query[$key] = array('$lt' => $data[0], '$gt' => $data[1]);
-                } elseif ('exp' == $con) { // 表达式查询
+                } elseif ('exp' == $con) {
+                    // 表达式查询
                     $query['$where'] = new \MongoCode($val[1]);
-                } elseif ('exists' == $con) { // 字段是否存在
+                } elseif ('exists' == $con) {
+                    // 字段是否存在
                     $query[$key] = array('$exists' => (bool) $val[1]);
-                } elseif ('size' == $con) { // 限制属性大小
+                } elseif ('size' == $con) {
+                    // 限制属性大小
                     $query[$key] = array('$size' => intval($val[1]));
-                } elseif ('type' == $con) { // 限制字段类型 1 浮点型 2 字符型 3 对象或者MongoDBRef 5 MongoBinData 7 MongoId 8 布尔型 9 MongoDate 10 NULL 15 MongoCode 16 32位整型 17 MongoTimestamp 18 MongoInt64 如果是数组的话判断元素的类型
+                } elseif ('type' == $con) {
+                    // 限制字段类型 1 浮点型 2 字符型 3 对象或者MongoDBRef 5 MongoBinData 7 MongoId 8 布尔型 9 MongoDate 10 NULL 15 MongoCode 16 32位整型 17 MongoTimestamp 18 MongoInt64 如果是数组的话判断元素的类型
                     $query[$key] = array('$type' => intval($val[1]));
                 } else {
                     $query[$key] = $val;

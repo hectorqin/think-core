@@ -89,7 +89,8 @@ class ChromeShowPageTraceBehavior
                     break;
                 default: // 调试信息
                     $name = strtoupper($name);
-                    if (strpos($name, '|')) { // 多组信息
+                    if (strpos($name, '|')) {
+                        // 多组信息
                         $array  = explode('|', $name);
                         $result = array();
                         foreach ($array as $name) {
@@ -111,7 +112,8 @@ class ChromeShowPageTraceBehavior
             chrome_debug('', 'groupEnd');
         }
         chrome_debug('', 'groupEnd');
-        if ($save = C('PAGE_TRACE_SAVE')) { // 保存页面Trace日志
+        if ($save = C('PAGE_TRACE_SAVE')) {
+            // 保存页面Trace日志
             if (is_array($save)) { // 选择选项卡保存
                 $tabs  = C('TRACE_PAGE_TABS', null, $this->tracePageTabs);
                 $array = array();
@@ -313,7 +315,7 @@ if (!function_exists('chrome_debug')) {
          */
         public static function getInstance()
         {
-            if (self::$_instance === null) {
+            if (null === self::$_instance) {
                 self::$_instance = new self();
             }
             return self::$_instance;
@@ -420,7 +422,7 @@ if (!function_exists('chrome_debug')) {
         protected static function _log($type, array $args)
         {
             // nothing passed in, don't do anything
-            if (count($args) == 0 && $type != self::GROUP_END) {
+            if (count($args) == 0 && self::GROUP_END != $type) {
                 return;
             }
 
@@ -477,7 +479,7 @@ if (!function_exists('chrome_debug')) {
                 $object_as_array[$key] = $this->_convert($value);
             }
 
-            $reflection = new ReflectionClass($object);
+            $reflection = new \ReflectionClass($object);
 
             // loop through the properties and add those
             foreach ($reflection->getProperties() as $property) {
@@ -494,7 +496,7 @@ if (!function_exists('chrome_debug')) {
 
                 try {
                     $value = $property->getValue($object);
-                } catch (ReflectionException $e) {
+                } catch (\ReflectionException $e) {
                     $value = 'only PHP 5.3 can access private/protected properties';
                 }
 
@@ -511,10 +513,10 @@ if (!function_exists('chrome_debug')) {
         /**
          * takes a reflection property and returns a nicely formatted key of the property name
          *
-         * @param ReflectionProperty
+         * @param \ReflectionProperty
          * @return string
          */
-        protected function _getPropertyKey(ReflectionProperty $property)
+        protected function _getPropertyKey(\ReflectionProperty $property)
         {
             $static = $property->isStatic() ? ' static' : '';
             if ($property->isPublic()) {
@@ -545,11 +547,11 @@ if (!function_exists('chrome_debug')) {
 
             // for group, groupEnd, and groupCollapsed
             // take out the backtrace since it is not useful
-            if ($type == self::GROUP || $type == self::GROUP_END || $type == self::GROUP_COLLAPSED) {
+            if (self::GROUP == $type || self::GROUP_END == $type || self::GROUP_COLLAPSED == $type) {
                 $backtrace = null;
             }
 
-            if ($backtrace !== null) {
+            if (null !== $backtrace) {
                 $this->_backtraces[] = $backtrace;
             }
 

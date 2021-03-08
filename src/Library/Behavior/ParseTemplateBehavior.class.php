@@ -25,9 +25,11 @@ class ParseTemplateBehavior
         $engine          = strtolower(C('TMPL_ENGINE_TYPE'));
         $_content        = empty($_data['content']) ? $_data['file'] : $_data['content'];
         $_data['prefix'] = !empty($_data['prefix']) ? $_data['prefix'] : C('TMPL_CACHE_PREFIX');
-        if ('think' == $engine) { // 采用Think模板引擎
+        if ('think' == $engine) {
+            // 采用Think模板引擎
             if ((!empty($_data['content']) && $this->checkContentCache($_data['content'], $_data['prefix']))
-                || $this->checkCache($_data['file'], $_data['prefix'])) { // 缓存有效
+                || $this->checkCache($_data['file'], $_data['prefix'])) {
+                // 缓存有效
                 //载入模版缓存文件
                 Storage::load(C('CACHE_PATH') . $_data['prefix'] . md5($_content) . C('TMPL_CACHFILE_SUFFIX'), $_data['var']);
             } else {
@@ -45,7 +47,8 @@ class ParseTemplateBehavior
             if (class_exists($class)) {
                 $tpl = new $class;
                 $tpl->fetch($_content, $_data['var']);
-            } else { // 类没有定义
+            } else {
+                // 类没有定义
                 E(L('_NOT_SUPPORT_') . ': ' . $class);
             }
         }

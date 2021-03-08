@@ -23,25 +23,6 @@ class App
      */
     public static function init()
     {
-        // 加载动态应用公共文件和配置
-        load_ext_file(COMMON_PATH);
-
-        //THINK_CHANGE_BEGIN  状态配置修改为在 扩展配置之后加载
-        // 读取当前应用状态对应的配置文件
-        if (APP_STATUS && is_file(CONF_PATH . APP_STATUS . CONF_EXT)) {
-            C(include CONF_PATH . APP_STATUS . CONF_EXT);
-        }
-
-        //THINK_CHANGE_END
-
-        //THINK_CHANGE_BEGIN  SLOG 初始化
-        if (C("SLOG_CONFIG.enable")) {
-            vendor('SLog.slog');
-            vendor('SLog.slog-function');
-            slog(C('SLOG_CONFIG'), 'config');
-        }
-        //THINK_CHANGE_END
-
         // 日志目录转换为绝对路径 默认情况下存储到公共模块下面
         C('LOG_PATH', realpath(LOG_PATH) . '/Common/');
 
@@ -81,7 +62,8 @@ class App
     public static function exec()
     {
 
-        if (!preg_match('/^[A-Za-z](\/|\w)*$/', CONTROLLER_NAME)) { // 安全检测
+        if (!preg_match('/^[A-Za-z](\/|\w)*$/', CONTROLLER_NAME)) {
+            // 安全检测
             $module = false;
         } elseif (C('ACTION_BIND_CLASS')) {
             // 操作绑定到类：模块\Controller\控制器\操作
@@ -135,6 +117,7 @@ class App
         }
         return;
     }
+
     public static function invokeAction($module, $action)
     {
         if (!preg_match('/^[A-Za-z](\w)*$/', $action)) {
@@ -184,8 +167,8 @@ class App
                     }
                 }
                 // 开启绑定参数过滤机制
-                if (C('URL_PARAMS_SAFE')) {
-                    $filters = C('URL_PARAMS_FILTER') ?: C('DEFAULT_FILTER');
+                if (C('URL_PARAMS_FILTER')) {
+                    $filters = C('URL_PARAMS_FILTER_TYPE') ?: C('DEFAULT_FILTER');
                     if ($filters) {
                         $filters = explode(',', $filters);
                         foreach ($filters as $filter) {
@@ -210,6 +193,7 @@ class App
             throw new \ReflectionException();
         }
     }
+
     /**
      * 运行应用实例 入口文件使用的快捷方法
      * @access public
@@ -217,6 +201,25 @@ class App
      */
     public static function run()
     {
+        // 加载动态应用公共文件和配置
+        load_ext_file(COMMON_PATH);
+
+        //THINK_CHANGE_BEGIN  状态配置修改为在 扩展配置之后加载
+        // 读取当前应用状态对应的配置文件
+        if (APP_STATUS && is_file(CONF_PATH . APP_STATUS . CONF_EXT)) {
+            C(include CONF_PATH . APP_STATUS . CONF_EXT);
+        }
+
+        //THINK_CHANGE_END
+
+        //THINK_CHANGE_BEGIN  SLOG 初始化
+        if (C("SLOG_CONFIG.enable")) {
+            vendor('SLog.slog');
+            vendor('SLog.slog-function');
+            slog(C('SLOG_CONFIG'), 'config');
+        }
+        //THINK_CHANGE_END
+
         // 应用初始化标签
         Hook::listen('app_init');
         App::init();

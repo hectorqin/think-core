@@ -29,6 +29,8 @@ abstract class Driver
     protected $lastInsID = null;
     // 返回或者影响记录数
     protected $numRows = 0;
+    // 事物操作PDO实例
+    protected $transPDO = null;
     // 事务指令数
     protected $transTimes = 0;
     // 错误信息
@@ -156,11 +158,12 @@ abstract class Driver
      * @param string $str  sql指令
      * @param boolean $fetchSql  不执行只是获取SQL
      * @param boolean $returnPDOStatement  返回PDOStatement
+     * @param boolean $master  是否在主服务器读操作
      * @return mixed
      */
-    public function query($str, $fetchSql = false, $returnPDOStatement = false)
+    public function query($str, $fetchSql = false, $returnPDOStatement = false, $master = false)
     {
-        $this->initConnect(false);
+        $this->initConnect($master);
         if (!$this->_linkID) {
             return false;
         }
@@ -291,6 +294,8 @@ abstract class Driver
 
         //数据rollback 支持
         if ($this->transTimes == 0) {
+            // 记录当前操作PDO
+            $this->transPdo = $this->_linkID;
             $this->_linkID->beginTransaction();
         }
         $this->transTimes++;
@@ -304,12 +309,21 @@ abstract class Driver
      */
     public function commit()
     {
-        if ($this->transTimes > 0) {
+        if ($this->transTimes == 1) {
+            // 由嵌套事物的最外层进行提交
             $result           = $this->_linkID->commit();
             $this->transTimes = 0;
+            $this->transPdo   = null;
             if (!$result) {
                 $this->error();
                 return false;
+            }
+        } else {
+            if ($this->transTimes <= 0) {
+                Log::record("未开启事务或已回退，请检查嵌套事务", Log::WARN);
+                $this->transTimes = 0;
+            } else {
+                $this->transTimes--;
             }
         }
         return true;
@@ -325,6 +339,7 @@ abstract class Driver
         if ($this->transTimes > 0) {
             $result           = $this->_linkID->rollback();
             $this->transTimes = 0;
+            $this->transPdo   = null;
             if (!$result) {
                 $this->error();
                 return false;
@@ -395,7 +410,8 @@ abstract class Driver
         }
         // 记录错误日志
         trace($this->error, '', 'ERR');
-        if ($this->config['debug']) { // 开启数据库调试模式
+        if ($this->config['debug']) {
+            // 开启数据库调试模式
             E($this->error);
         } else {
             return $this->error;
@@ -421,17 +437,19 @@ abstract class Driver
     protected function parseSet($data)
     {
         foreach ($data as $key => $val) {
-            if (is_array($val) && 'exp' == $val[0]) {
+            if (isset($val[0]) && 'exp' == $val[0]) {
                 $set[] = $this->parseKey($key) . '=' . $val[1];
             } elseif (is_null($val)) {
                 $set[] = $this->parseKey($key) . '=NULL';
-            } elseif (is_scalar($val)) { // 过滤非标量数据
+            } elseif (is_scalar($val)) {
+                // 过滤非标量数据
                 if (0 === strpos($val, ':') && in_array($val, array_keys($this->bind))) {
-                    $set[] = $this->parseKey($key) . '=' . $this->escapeString($val);
+                    // TODO
+                    $set[] = $this->parseKey($key) . '=' . $val;
                 } else {
                     $name  = count($this->bind);
-                    $set[] = $this->parseKey($key) . '=:' . $name;
-                    $this->bindParam($name, $val);
+                    $set[] = $this->parseKey($key) . '=:' . $key . '_' . $name;
+                    $this->bindParam($key . '_' . $name, $val);
                 }
             }
         }
@@ -451,12 +469,13 @@ abstract class Driver
     }
 
     /**
-     * 字段名分析
-     * @access protected
+     * 字段和表名处理
+     * @access public
      * @param string $key
+     * @param bool   $strict
      * @return string
      */
-    protected function parseKey(&$key)
+    public function parseKey($key, $strict = false)
     {
         return $key;
     }
@@ -465,7 +484,7 @@ abstract class Driver
      * value分析
      * @access protected
      * @param mixed $value
-     * @return string
+     * @return string|array
      */
     protected function parseValue($value)
     {
@@ -522,7 +541,8 @@ abstract class Driver
      */
     protected function parseTable($tables)
     {
-        if (is_array($tables)) { // 支持别名定义
+        if (is_array($tables)) {
+            // 支持别名定义
             $array = array();
             foreach ($tables as $table => $alias) {
                 if (!is_numeric($table)) {
@@ -534,8 +554,7 @@ abstract class Driver
             }
             $tables = $array;
         } elseif (is_string($tables)) {
-            $tables = explode(',', $tables);
-            array_walk($tables, array(&$this, 'parseKey'));
+            $tables = array_map(array($this, 'parseKey'), explode(',', $tables));
         }
         return implode(',', $tables);
     }
@@ -552,7 +571,8 @@ abstract class Driver
         if (is_string($where)) {
             // 直接使用字符串条件
             $whereStr = $where;
-        } else { // 使用数组表达式
+        } else {
+            // 使用数组表达式
             $operate = isset($where['_logic']) ? strtoupper($where['_logic']) : '';
             if (in_array($operate, array('AND', 'OR', 'XOR'))) {
                 // 定义逻辑运算规则 例如 OR XOR AND NOT
@@ -577,7 +597,8 @@ abstract class Driver
                     // 多条件支持
                     $multi = is_array($val) && isset($val['_multi']);
                     $key   = trim($key);
-                    if (strpos($key, '|')) { // 支持 name|title|nickname 方式定义查询字段
+                    if (strpos($key, '|')) {
+                        // 支持 name|title|nickname 方式定义查询字段
                         $array = explode('|', $key);
                         $str   = array();
                         foreach ($array as $m => $k) {
@@ -615,9 +636,11 @@ abstract class Driver
         if (is_array($val)) {
             if (is_string($val[0])) {
                 $exp = strtolower($val[0]);
-                if (preg_match('/^(eq|neq|gt|egt|lt|elt)$/', $exp)) { // 比较运算
+                if (preg_match('/^(eq|neq|gt|egt|lt|elt)$/', $exp)) {
+                    // 比较运算
                     $whereStr .= $key . ' ' . $this->exp[$exp] . ' ' . $this->parseValue($val[1]);
-                } elseif (preg_match('/^(notlike|like)$/', $exp)) { // 模糊查找
+                } elseif (preg_match('/^(notlike|like)$/', $exp)) {
+                    // 模糊查找
                     if (is_array($val[1])) {
                         $likeLogic = isset($val[2]) ? strtoupper($val[2]) : 'OR';
                         if (in_array($likeLogic, array('AND', 'OR', 'XOR'))) {
@@ -630,11 +653,14 @@ abstract class Driver
                     } else {
                         $whereStr .= $key . ' ' . $this->exp[$exp] . ' ' . $this->parseValue($val[1]);
                     }
-                } elseif ('bind' == $exp) { // 使用表达式
+                } elseif ('bind' == $exp) {
+                    // 使用表达式
                     $whereStr .= $key . ' = :' . $val[1];
-                } elseif ('exp' == $exp) { // 使用表达式
+                } elseif ('exp' == $exp) {
+                    // 使用表达式
                     $whereStr .= $key . ' ' . $val[1];
-                } elseif (preg_match('/^(notin|not in|in)$/', $exp)) { // IN 运算
+                } elseif (preg_match('/^(notin|not in|in)$/', $exp)) {
+                    // IN 运算
                     if (isset($val[2]) && 'exp' == $val[2]) {
                         $whereStr .= $key . ' ' . $this->exp[$exp] . ' ' . $val[1];
                     } else {
@@ -642,9 +668,13 @@ abstract class Driver
                             $val[1] = explode(',', $val[1]);
                         }
                         $zone = implode(',', $this->parseValue($val[1]));
+                        if (!$zone) {
+                            Log::record("IN/NOT IN 查询，范围数组不能为空", Log::WARN);
+                        }
                         $whereStr .= $key . ' ' . $this->exp[$exp] . ' (' . ($zone ? $zone : '""') . ')';
                     }
-                } elseif (preg_match('/^(notbetween|not between|between)$/', $exp)) { // BETWEEN运算
+                } elseif (preg_match('/^(notbetween|not between|between)$/', $exp)) {
+                    // BETWEEN运算
                     $data = is_string($val[1]) ? explode(',', $val[1]) : $val[1];
                     $whereStr .= $key . ' ' . $this->exp[$exp] . ' ' . $this->parseValue($data[0]) . ' AND ' . $this->parseValue($data[1]);
                 } else {
@@ -727,7 +757,7 @@ abstract class Driver
      */
     protected function parseLimit($limit)
     {
-        return !empty($limit) ? ' LIMIT ' . $limit . ' ' : '';
+        return (!empty($limit) && false === strpos($limit, '(')) ? ' LIMIT ' . $limit . ' ' : '';
     }
 
     /**
@@ -753,17 +783,39 @@ abstract class Driver
      */
     protected function parseOrder($order)
     {
+        if (empty($order)) {
+            return '';
+        }
+        $array = array();
+        if (is_string($order) && '[RAND]' != $order) {
+            $order = array_map('trim', explode(',', $order));
+        }
+
         if (is_array($order)) {
-            $array = array();
             foreach ($order as $key => $val) {
                 if (is_numeric($key)) {
-                    $array[] = $this->parseKey($val);
+                    list($key, $sort) = explode(' ', strpos($val, ' ') ? $val : $val . ' ');
                 } else {
-                    $array[] = $this->parseKey($key) . ' ' . $val;
+                    $sort = $val;
+                }
+
+                if (preg_match('/^[\w\.]+$/', $key)) {
+                    $sort = strtoupper($sort);
+                    $sort = in_array($sort, ['ASC', 'DESC'], true) ? ' ' . $sort : '';
+                    if (strpos($key, '.')) {
+                        list($alias, $key) = explode('.', $key);
+                        $array[]           = $this->parseKey($alias, true) . '.' . $this->parseKey($key, true) . $sort;
+                    } else {
+                        $array[] = $this->parseKey($key, true) . $sort;
+                    }
                 }
             }
-            $order = implode(',', $array);
+        } elseif ('[RAND]' == $order) {
+            // 随机排序
+            $array[] = $this->parseRand();
         }
+
+        $order = implode(',', $array);
         return !empty($order) ? ' ORDER BY ' . $order : '';
     }
 
@@ -890,20 +942,22 @@ abstract class Driver
         $this->model = $options['model'];
         $this->parseBind(!empty($options['bind']) ? $options['bind'] : array());
         foreach ($data as $key => $val) {
-            if (is_array($val) && 'exp' == $val[0]) {
+            if (isset($val[0]) && 'exp' == $val[0]) {
                 $fields[] = $this->parseKey($key);
                 $values[] = $val[1];
             } elseif (is_null($val)) {
                 $fields[] = $this->parseKey($key);
                 $values[] = 'NULL';
-            } elseif (is_scalar($val)) { // 过滤非标量数据
+            } elseif (is_scalar($val)) {
+                // 过滤非标量数据
                 $fields[] = $this->parseKey($key);
                 if (0 === strpos($val, ':') && in_array($val, array_keys($this->bind))) {
-                    $values[] = $this->parseValue($val);
+                    // TODO
+                    $values[] = $val;
                 } else {
                     $name     = count($this->bind);
-                    $values[] = ':' . $name;
-                    $this->bindParam($name, $val);
+                    $values[] = ':' . $key . '_' . $name;
+                    $this->bindParam($key . '_' . $name, $val);
                 }
             }
         }
@@ -941,11 +995,12 @@ abstract class Driver
                     $value[] = 'NULL';
                 } elseif (is_scalar($val)) {
                     if (0 === strpos($val, ':') && in_array($val, array_keys($this->bind))) {
-                        $value[] = $this->parseValue($val);
+                        // TODO
+                        $value[] = $val;
                     } else {
                         $name    = count($this->bind);
-                        $value[] = ':' . $name;
-                        $this->bindParam($name, $val);
+                        $value[] = ':' . $key . '_' . $name;
+                        $this->bindParam($key . '_' . $name, $val);
                     }
                 }
             }
@@ -972,8 +1027,8 @@ abstract class Driver
             $fields = explode(',', $fields);
         }
 
-        array_walk($fields, array($this, 'parseKey'));
-        $sql = 'INSERT INTO ' . $this->parseTable($table) . ' (' . implode(',', $fields) . ') ';
+        $fields = array_map(array($this, 'parseKey'), $fields);
+        $sql    = 'INSERT INTO ' . $this->parseTable($table) . ' (' . implode(',', $fields) . ') ';
         $sql .= $this->buildSelectSql($options);
         return $this->execute($sql, !empty($options['fetch_sql']) ? true : false);
     }
@@ -991,7 +1046,8 @@ abstract class Driver
         $this->parseBind(!empty($options['bind']) ? $options['bind'] : array());
         $table = $this->parseTable($options['table']);
         $sql   = 'UPDATE ' . $table . $this->parseSet($data);
-        if (strpos($table, ',')) { // 多表更新支持JOIN操作
+        if (strpos($table, ',')) {
+            // 多表更新支持JOIN操作
             $sql .= $this->parseJoin(!empty($options['join']) ? $options['join'] : '');
         }
         $sql .= $this->parseWhere(!empty($options['where']) ? $options['where'] : '');
@@ -1016,7 +1072,8 @@ abstract class Driver
         $this->parseBind(!empty($options['bind']) ? $options['bind'] : array());
         $table = $this->parseTable($options['table']);
         $sql   = 'DELETE FROM ' . $table;
-        if (strpos($table, ',')) { // 多表删除支持USING和JOIN操作
+        if (strpos($table, ',')) {
+            // 多表删除支持USING和JOIN操作
             if (!empty($options['using'])) {
                 $sql .= ' USING ' . $this->parseTable($options['using']) . ' ';
             }
@@ -1043,7 +1100,7 @@ abstract class Driver
         $this->model = $options['model'];
         $this->parseBind(!empty($options['bind']) ? $options['bind'] : array());
         $sql    = $this->buildSelectSql($options);
-        $result = $this->query($sql, !empty($options['fetch_sql']) ? true : false, !empty($options['cursor']) ? $options['cursor'] : false);
+        $result = $this->query($sql, !empty($options['fetch_sql']) ? true : false, !empty($options['cursor']) ? $options['cursor'] : false, !empty($options['master']) ? true : false);
         return $result;
     }
 
@@ -1155,7 +1212,8 @@ abstract class Driver
      */
     protected function debug($start)
     {
-        if ($this->config['debug']) { // 开启数据库调试模式
+        if ($this->config['debug']) {
+            // 开启数据库调试模式
             if ($start) {
                 G('queryStartTime');
             } else {
@@ -1180,6 +1238,11 @@ abstract class Driver
      */
     protected function initConnect($master = true)
     {
+        // 开启事物时用同一个连接进行操作
+        if ($this->transPDO) {
+            return $this->transPDO;
+        }
+
         if (!empty($this->config['deploy']))
         // 采用分布式数据库
         {
@@ -1221,7 +1284,8 @@ abstract class Driver
             {
                 $r = $m;
             } else {
-                if (is_numeric($this->config['slave_no'])) { // 指定服务器读
+                if (is_numeric($this->config['slave_no'])) {
+                    // 指定服务器读
                     $r = $this->config['slave_no'];
                 } else {
                     // 读操作连接从服务器
@@ -1299,5 +1363,15 @@ abstract class Driver
         }
 
         return $this;
+    }
+
+    /**
+     * 随机排序
+     * @access protected
+     * @return string
+     */
+    protected function parseRand()
+    {
+        E("不支持随机排序");
     }
 }

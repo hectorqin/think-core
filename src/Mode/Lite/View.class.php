@@ -126,7 +126,8 @@ class View
         // 页面缓存
         ob_start();
         ob_implicit_flush(0);
-        if ('php' == strtolower(C('TMPL_ENGINE_TYPE'))) { // 使用PHP原生模板
+        if ('php' == strtolower(C('TMPL_ENGINE_TYPE'))) {
+            // 使用PHP原生模板
             $_content = $content;
             // 模板阵列变量分解成为独立变量
             extract($this->tVar, EXTR_OVERWRITE);
@@ -136,7 +137,8 @@ class View
             // 视图解析标签
             $params   = array('var' => $this->tVar, 'file' => $templateFile, 'content' => $content, 'prefix' => $prefix);
             $_content = !empty($content) ?: $templateFile;
-            if ((!empty($content) && $this->checkContentCache($content, $prefix)) || $this->checkCache($templateFile, $prefix)) { // 缓存有效
+            if ((!empty($content) && $this->checkContentCache($content, $prefix)) || $this->checkCache($templateFile, $prefix)) {
+                // 缓存有效
                 //载入模版缓存文件
                 Storage::load(C('CACHE_PATH') . $prefix . md5($_content) . C('TMPL_CACHFILE_SUFFIX'), $this->tVar);
             } else {
@@ -236,7 +238,8 @@ class View
 
         // 获取当前模块
         $module = MODULE_NAME;
-        if (strpos($template, '@')) { // 跨模块调用模版文件
+        if (strpos($template, '@')) {
+            // 跨模块调用模版文件
             list($module, $template) = explode('@', $template);
         }
         // 获取当前主题的模版路径
@@ -295,12 +298,14 @@ class View
      */
     private function getTemplateTheme()
     {
-        if ($this->theme) { // 指定模板主题
+        if ($this->theme) {
+            // 指定模板主题
             $theme = $this->theme;
         } else {
             /* 获取模板主题名称 */
             $theme = C('DEFAULT_THEME');
-            if (C('TMPL_DETECT_THEME')) { // 自动侦测模板主题
+            if (C('TMPL_DETECT_THEME')) {
+                // 自动侦测模板主题
                 $t = C('VAR_TEMPLATE');
                 if (isset($_GET[$t])) {
                     $theme = $_GET[$t];

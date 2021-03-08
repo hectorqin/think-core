@@ -108,9 +108,11 @@ class Template
 
         // 判断是否启用布局
         if (C('LAYOUT_ON')) {
-            if (false !== strpos($tmplContent, '{__NOLAYOUT__}')) { // 可以单独定义不使用布局
+            if (false !== strpos($tmplContent, '{__NOLAYOUT__}')) {
+                // 可以单独定义不使用布局
                 $tmplContent = str_replace('{__NOLAYOUT__}', '', $tmplContent);
-            } else { // 替换布局的主体内容
+            } else {
+                // 替换布局的主体内容
                 $layoutFile = THEME_PATH . C('LAYOUT_NAME') . $this->config['template_suffix'];
                 // 检查布局文件
                 if (!is_file($layoutFile)) {
@@ -381,7 +383,8 @@ class Template
             } while ($parse && $parse--);
             return $content;
         } elseif (is_array($content)) {
-            if (preg_match('/' . $begin . 'block\sname=[\'"](.+?)[\'"]\s*?' . $end . '/is', $content[3])) { //存在嵌套，进一步解析
+            if (preg_match('/' . $begin . 'block\sname=[\'"](.+?)[\'"]\s*?' . $end . '/is', $content[3])) {
+                //存在嵌套，进一步解析
                 $parse      = 1;
                 $content[3] = preg_replace_callback($reg, array($this, 'replaceBlock'), "{$content[3]}{$begin}/block{$end}");
                 return $content[1] . $content[3];
@@ -438,7 +441,8 @@ class Template
         $that = $this;
         foreach ($tLib->getTags() as $name => $val) {
             $tags = array($name);
-            if (isset($val['alias'])) { // 别名设置
+            if (isset($val['alias'])) {
+                // 别名设置
                 $tags   = explode(',', $val['alias']);
                 $tags[] = $name;
             }
@@ -511,13 +515,17 @@ class Template
         $flag  = substr($tagStr, 0, 1);
         $flag2 = substr($tagStr, 1, 1);
         $name  = substr($tagStr, 1);
-        if ('$' == $flag && '.' != $flag2 && '(' != $flag2) { //解析模板变量 格式 {$varName}
+        if ('$' == $flag && '.' != $flag2 && '(' != $flag2) {
+            //解析模板变量 格式 {$varName}
             return $this->parseVar($name);
-        } elseif ('-' == $flag || '+' == $flag) { // 输出计算
+        } elseif ('-' == $flag || '+' == $flag) {
+            // 输出计算
             return '<?php echo ' . $flag . $name . ';?>';
-        } elseif (':' == $flag) { // 输出某个函数的结果
+        } elseif (':' == $flag) {
+            // 输出某个函数的结果
             return '<?php echo ' . $name . ';?>';
-        } elseif ('~' == $flag) { // 执行某个函数
+        } elseif ('~' == $flag) {
+            // 执行某个函数
             return '<?php ' . $name . ';?>';
         } elseif (substr($tagStr, 0, 2) == '//' || (substr($tagStr, 0, 2) == '/*' && substr(rtrim($tagStr), -2) == '*/')) {
             //注释标签

@@ -1,7 +1,7 @@
 <?php
 namespace Think\Upload\Driver\Bcs;
 
-class BCS_MimeTypes
+class BcsMimetypes
 {
     public static $mime_types = array(
         '3gp'     => 'video/3gpp', 'ai'                    => 'application/postscript',
@@ -132,7 +132,7 @@ class BCS_MimeTypes
         //add by zhengkan 20110914
         "wma"     => "audio/x-ms-wma",
         "lrc"     => "application/lrc");
-    public static function get_mimetype($ext)
+    public static function getMimetype($ext)
     {
         $ext = strtolower($ext);
         return (isset(self::$mime_types[$ext]) ? self::$mime_types[$ext] : 'application/octet-stream');

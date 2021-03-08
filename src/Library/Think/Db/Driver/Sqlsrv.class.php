@@ -64,7 +64,7 @@ class Sqlsrv extends Driver
                 $info[$val['column_name']] = array(
                     'name'    => $val['column_name'],
                     'type'    => $val['data_type'],
-                    'notnull' => (bool) ($val['is_nullable'] === ''), // not null is empty, null is yes
+                    'notnull' => (bool) ('' === $val['is_nullable']), // not null is empty, null is yes
                     'default' => $val['column_default'],
                     'primary' => false,
                     'autoinc' => false,
@@ -104,15 +104,21 @@ class Sqlsrv extends Driver
     }
 
     /**
-     * 字段名分析
-     * @access protected
+     * 字段和表名处理
+     * @access public
      * @param string $key
+     * @param bool   $strict
      * @return string
      */
-    protected function parseKey(&$key)
+    public function parseKey($key, $strict = false)
     {
         $key = trim($key);
-        if (!is_numeric($key) && !preg_match('/[,\'\"\*\(\)\[.\s]/', $key)) {
+
+        if ($strict && !preg_match('/^[\w\.\*]+$/', $key)) {
+            E('not support data:' . $key);
+        }
+
+        if ($strict || (!is_numeric($key) && !preg_match('/[,\'\"\*\(\)\[.\s]/', $key))) {
             $key = '[' . $key . ']';
         }
         return $key;

@@ -1,6 +1,7 @@
 <?php
 namespace Think\Upload\Driver\Bcs;
 
+use Think\Upload\Driver\Bcs\BCS_Exception as BCS_Exception;
 use Think\Upload\Driver\Bcs\BCS_MimeTypes;
 use Think\Upload\Driver\Bcs\BCS_RequestCore;
 use Think\Upload\Driver\Bcs\BCS_ResponseCore;
@@ -23,7 +24,7 @@ require_once BCS_API_PATH . '/mimetypes.class.php';
 /**
  * Default BCS Exception.
  */
-class BCS_Exception extends \Exception
+class BcsException extends \Exception
 {
 }
 /**
@@ -162,16 +163,16 @@ class BaiduBCS
         $opt[self::SK] = $this->sk;
 
         // Validate the S3 bucket name, only list_bucket didnot need validate_bucket
-        if (!('/' == $opt[self::OBJECT] && '' == $opt[self::BUCKET] && 'GET' == $opt[self::METHOD] && !isset($opt[self::QUERY_STRING][self::ACL])) && !self::validate_bucket($opt[self::BUCKET])) {
+        if (!('/' == $opt[self::OBJECT] && '' == $opt[self::BUCKET] && 'GET' == $opt[self::METHOD] && !isset($opt[self::QUERY_STRING][self::ACL])) && !self::validateBucket($opt[self::BUCKET])) {
             throw new BCS_Exception($opt[self::BUCKET] . 'is not valid, please check!');
         }
         //Validate object
-        if (isset($opt[self::OBJECT]) && !self::validate_object($opt[self::OBJECT])) {
+        if (isset($opt[self::OBJECT]) && !self::validateObject($opt[self::OBJECT])) {
             throw new BCS_Exception("Invalid object param[" . $opt[self::OBJECT] . "], please check.", -1);
         }
         //construct url
-        $url = $this->format_url($opt);
-        if ($url === false) {
+        $url = $this->formatUrl($opt);
+        if (false === $url) {
             throw new BCS_Exception('Can not format url, please check your param!', -1);
         }
         $opt['url'] = $url;
@@ -215,7 +216,7 @@ class BaiduBCS
             }
             $request->set_read_stream_size($length);
             // Attempt to guess the correct mime-type
-            if ($headers['Content-Type'] === 'application/x-www-form-urlencoded') {
+            if ('application/x-www-form-urlencoded' === $headers['Content-Type']) {
                 $extension               = explode('.', $opt['fileUpload']);
                 $extension               = array_pop($extension);
                 $mime_type               = BCS_MimeTypes::get_mimetype($extension);
@@ -235,7 +236,7 @@ class BaiduBCS
                 "\r",
                 "\n"), '', $header_value);
             // Add the header if it has a value
-            if ($header_value !== '') {
+            if ('' !== $header_value) {
                 $request->add_header($header_key, $header_value);
             }
         }
@@ -255,7 +256,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return BCS_ResponseCore
      */
-    public function list_bucket($opt = array())
+    public function listBucket($opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = '';
@@ -274,7 +275,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return BCS_ResponseCore
      */
-    public function create_bucket($bucket, $acl = null, $opt = array())
+    public function createBucket($bucket, $acl = null, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
@@ -284,7 +285,7 @@ class BaiduBCS
             if (!in_array($acl, self::$ACL_TYPES)) {
                 throw new BCS_Exception("Invalid acl_type[" . $acl . "], please check!", -1);
             }
-            self::set_header_into_opt("x-bs-acl", $acl, $opt);
+            self::setHeaderIntoOpt("x-bs-acl", $acl, $opt);
         }
         $response = $this->authenticate($opt);
         $this->log($response->isOK() ? "Create bucket success!" : "Create bucket failed! Response: [" . $response->body . "]", $opt);
@@ -297,7 +298,7 @@ class BaiduBCS
      * @param array $opt (Optional)
      * @return boolean|BCS_ResponseCore
      */
-    public function delete_bucket($bucket, $opt = array())
+    public function deleteBucket($bucket, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
@@ -320,10 +321,10 @@ class BaiduBCS
      * @param array $opt (Optional)
      * @return boolean|BCS_ResponseCore
      */
-    public function set_bucket_acl($bucket, $acl, $opt = array())
+    public function setBucketAcl($bucket, $acl, $opt = array())
     {
         $this->assertParameterArray($opt);
-        $result                  = $this->analyze_user_acl($acl);
+        $result                  = $this->analyzeUserAcl($acl);
         $opt                     = array_merge($opt, $result);
         $opt[self::BUCKET]       = $bucket;
         $opt[self::METHOD]       = 'PUT';
@@ -341,7 +342,7 @@ class BaiduBCS
      * @param array $opt (Optional)
      * @return BCS_ResponseCore
      */
-    public function get_bucket_acl($bucket, $opt = array())
+    public function getBucketAcl($bucket, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET]       = $bucket;
@@ -364,7 +365,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return BCS_ResponseCore
      */
-    public function list_object($bucket, $opt = array())
+    public function listObject($bucket, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
@@ -404,7 +405,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return BCS_ResponseCore
      */
-    public function list_object_by_dir($bucket, $dir = '/', $list_model = 2, $opt = array())
+    public function listObjectByDir($bucket, $dir = '/', $list_model = 2, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
@@ -441,7 +442,7 @@ class BaiduBCS
      * length - Optional; 待上传长度
      * @return BCS_ResponseCore
      */
-    public function create_object($bucket, $object, $file, $opt = array())
+    public function createObject($bucket, $object, $file, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
@@ -450,14 +451,14 @@ class BaiduBCS
         $opt[self::METHOD] = 'PUT';
         if (isset($opt['acl'])) {
             if (in_array($opt['acl'], self::$ACL_TYPES)) {
-                self::set_header_into_opt("x-bs-acl", $opt['acl'], $opt);
+                self::setHeaderIntoOpt("x-bs-acl", $opt['acl'], $opt);
             } else {
                 throw new BCS_Exception("Invalid acl string, it should be acl_type", -1);
             }
             unset($opt['acl']);
         }
         if (isset($opt['filename'])) {
-            self::set_header_into_opt("Content-Disposition", 'attachment; filename=' . $opt['filename'], $opt);
+            self::setHeaderIntoOpt("Content-Disposition", 'attachment; filename=' . $opt['filename'], $opt);
         }
         $response = $this->authenticate($opt);
         $this->log($response->isOK() ? "Create object[$object] file[$file] success!" : "Create object[$object] file[$file] failed! Response: [" . $response->body . "] Logid[" . $response->header["x-bs-request-id"] . "]", $opt);
@@ -474,27 +475,27 @@ class BaiduBCS
      * acl - Optional ; 上传文件的acl，只能使用acl_type
      * @return BCS_ResponseCore
      */
-    public function create_object_by_content($bucket, $object, $content, $opt = array())
+    public function createObjectByContent($bucket, $object, $content, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
         $opt[self::OBJECT] = $object;
         $opt[self::METHOD] = 'PUT';
-        if ($content !== null && is_string($content)) {
+        if (null !== $content && is_string($content)) {
             $opt['content'] = $content;
         } else {
             throw new BCS_Exception("Invalid object content, please check.", -1);
         }
         if (isset($opt['acl'])) {
             if (in_array($opt['acl'], self::$ACL_TYPES)) {
-                self::set_header_into_opt("x-bs-acl", $opt['acl'], $opt);
+                self::setHeaderIntoOpt("x-bs-acl", $opt['acl'], $opt);
             } else {
                 throw new BCS_Exception("Invalid acl string, it should be acl_type", -1);
             }
             unset($opt['acl']);
         }
         if (isset($opt['filename'])) {
-            self::set_header_into_opt("Content-Disposition", 'attachment; filename=' . $opt['filename'], $opt);
+            self::setHeaderIntoOpt("Content-Disposition", 'attachment; filename=' . $opt['filename'], $opt);
         }
         $response = $this->authenticate($opt);
         $this->log($response->isOK() ? "Create object[$object] success!" : "Create object[$object] failed! Response: [" . $response->body . "] Logid[" . $response->header["x-bs-request-id"] . "]", $opt);
@@ -511,7 +512,7 @@ class BaiduBCS
      * sub_object_size - Optional; 指定子文件的划分大小，单位B，建议以256KB为单位进行子object划分，默认为1MB进行划分
      * @return BCS_ResponseCore
      */
-    public function create_object_superfile($bucket, $object, $file, $opt = array())
+    public function createObjectSuperfile($bucket, $object, $file, $opt = array())
     {
         if (isset($opt['length']) || isset($opt['seekTo'])) {
             throw new BCS_Exception("Temporary unsupport opt of length and seekTo of superfile.", -1);
@@ -523,7 +524,7 @@ class BaiduBCS
         $opt[self::METHOD] = 'PUT';
         if (isset($opt['acl'])) {
             if (in_array($opt['acl'], self::$ACL_TYPES)) {
-                self::set_header_into_opt("x-bs-acl", $opt['acl'], $opt);
+                self::setHeaderIntoOpt("x-bs-acl", $opt['acl'], $opt);
             } else {
                 throw new BCS_Exception("Invalid acl string, it should be acl_type", -1);
             }
@@ -563,7 +564,7 @@ class BaiduBCS
             $object_list['object_list']['part_' . $i]        = array();
             $object_list['object_list']['part_' . $i]['url'] = 'bs://' . $bucket . $opt[self::OBJECT];
             $this->log("Begin to upload Sub-object[" . $opt[self::OBJECT] . "][$i/$sliceNum][seekto:" . $opt['seekTo'] . "][Length:" . $opt['length'] . "]", $opt);
-            $response = $this->create_object($bucket, $opt[self::OBJECT], $file, $opt);
+            $response = $this->createObject($bucket, $opt[self::OBJECT], $file, $opt);
             if ($response->isOK()) {
                 $this->log("Sub-object upload[" . $opt[self::OBJECT] . "][$i/$sliceNum][seekto:" . $opt['seekTo'] . "][Length:" . $opt['length'] . "]success! ", $opt);
                 $object_list['object_list']['part_' . $i]['etag'] = $response->header['Content-MD5'];
@@ -577,12 +578,12 @@ class BaiduBCS
         unset($opt['fileUpload']);
         unset($opt['length']);
         unset($opt['seekTo']);
-        $opt['content']          = self::array_to_json($object_list);
+        $opt['content']          = self::arrayToJson($object_list);
         $opt[self::QUERY_STRING] = array(
             "superfile" => 1);
         $opt[self::OBJECT] = $object;
         if (isset($opt['filename'])) {
-            self::set_header_into_opt("Content-Disposition", 'attachment; filename=' . $opt['filename'], $opt);
+            self::setHeaderIntoOpt("Content-Disposition", 'attachment; filename=' . $opt['filename'], $opt);
         }
         $response = $this->authenticate($opt);
         $this->log($response->isOK() ? "Create object-superfile success!" : "Create object-superfile failed! Response: [" . $response->body . "]", $opt);
@@ -616,7 +617,7 @@ class BaiduBCS
      * 'failed' => array()   上传失败的文件
      *
      */
-    public function upload_directory($bucket, $dir, $opt = array())
+    public function uploadDirectory($bucket, $dir, $opt = array())
     {
         $this->assertParameterArray($opt);
         if (!is_dir($dir)) {
@@ -635,10 +636,10 @@ class BaiduBCS
             $has_sub_directory = $opt['has_sub_directory'];
         }
         //获取文件树和构造object名
-        $file_tree = self::get_filetree($dir);
+        $file_tree = self::getFiletree($dir);
         $objects   = array();
         foreach ($file_tree as $file) {
-            $object                     = $has_sub_directory == true ? substr($file, strlen($dir)) : "/" . basename($file);
+            $object                     = true == $has_sub_directory ? substr($file, strlen($dir)) : "/" . basename($file);
             $objects[$prefix . $object] = $file;
         }
         $objectCount       = count($objects);
@@ -700,7 +701,7 @@ class BaiduBCS
             $tmp_opt = array_merge($opt);
             if (isset($opt[self::IMPORT_BCS_PRE_FILTER]) && function_exists($opt[self::IMPORT_BCS_PRE_FILTER])) {
                 $bolRes = $opt[self::IMPORT_BCS_PRE_FILTER]($bucket, $object, $file, $tmp_opt);
-                if ($bolRes !== true) {
+                if (true !== $bolRes) {
                     $this->log("User pre_filter_function return un-true. Skip id[$num/$objectCount]object[$object]file[$file].", $opt);
                     //$result ['skipped'] [] = "id[$num/$objectCount]object[$object]file[$file]";
                     $result['skipped']++;
@@ -709,7 +710,7 @@ class BaiduBCS
                 }
             }
             try {
-                $response = $this->create_object($bucket, $object, $file, $tmp_opt);
+                $response = $this->createObject($bucket, $object, $file, $tmp_opt);
             } catch (Exception $e) {
                 $this->log($e->getMessage(), $opt);
                 $this->log("Upload Failed id[$num/$objectCount]object[$object]file[$file].", $opt);
@@ -765,22 +766,22 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return BCS_ResponseCore
      */
-    public function copy_object($source, $dest, $opt = array())
+    public function copyObject($source, $dest, $opt = array())
     {
         $this->assertParameterArray($opt);
         //valid source and dest
         if (empty($source) || !is_array($source) || !isset($source[self::BUCKET]) || !isset($source[self::OBJECT])) {
             throw new BCS_Exception('$source invalid, please check!', -1);
         }
-        if (empty($dest) || !is_array($dest) || !isset($dest[self::BUCKET]) || !isset($dest[self::OBJECT]) || !self::validate_bucket($dest[self::BUCKET]) || !self::validate_object($dest[self::OBJECT])) {
+        if (empty($dest) || !is_array($dest) || !isset($dest[self::BUCKET]) || !isset($dest[self::OBJECT]) || !self::validateBucket($dest[self::BUCKET]) || !self::validateObject($dest[self::OBJECT])) {
             throw new BCS_Exception('$dest invalid, please check!', -1);
         }
         $opt[self::BUCKET] = $dest[self::BUCKET];
         $opt[self::OBJECT] = $dest[self::OBJECT];
         $opt[self::METHOD] = 'PUT';
-        self::set_header_into_opt('x-bs-copy-source', 'bs://' . $source[self::BUCKET] . $source[self::OBJECT], $opt);
+        self::setHeaderIntoOpt('x-bs-copy-source', 'bs://' . $source[self::BUCKET] . $source[self::OBJECT], $opt);
         if (isset($opt['source_tag'])) {
-            self::set_header_into_opt('x-bs-copy-source-tag', $opt['source_tag'], $opt);
+            self::setHeaderIntoOpt('x-bs-copy-source-tag', $opt['source_tag'], $opt);
         }
         $response = $this->authenticate($opt);
         $this->log($response->isOK() ? "Copy object success!" : "Copy object failed! Response: [" . $response->body . "]", $opt);
@@ -801,7 +802,7 @@ class BaiduBCS
      * Expires
      * @return BCS_ResponseCore
      */
-    public function set_object_meta($bucket, $object, $meta, $opt = array())
+    public function setObjectMeta($bucket, $object, $meta, $opt = array())
     {
         $this->assertParameterArray($opt);
         $this->assertParameterArray($meta);
@@ -814,12 +815,12 @@ class BaiduBCS
             throw new BCS_Exception('$meta can not be empty! And $meta must be array.', -1);
         }
         foreach ($meta as $header => $value) {
-            self::set_header_into_opt($header, $value, $opt);
+            self::setHeaderIntoOpt($header, $value, $opt);
         }
         $source = array(
             self::BUCKET => $bucket,
             self::OBJECT => $object);
-        $response = $this->copy_object($source, $source, $opt);
+        $response = $this->copyObject($source, $source, $opt);
         $this->log($response->isOK() ? "Set object meta success!" : "Set object meta failed! Response: [" . $response->body . "]", $opt);
         return $response;
     }
@@ -832,7 +833,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return BCS_ResponseCore
      */
-    public function get_object_acl($bucket, $object, $opt = array())
+    public function getObjectAcl($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET]       = $bucket;
@@ -858,11 +859,11 @@ class BaiduBCS
      * @param array $opt (Optional)
      * @return BCS_ResponseCore
      */
-    public function set_object_acl($bucket, $object, $acl, $opt = array())
+    public function setObjectAcl($bucket, $object, $acl, $opt = array())
     {
         $this->assertParameterArray($opt);
         //analyze acl
-        $result                  = $this->analyze_user_acl($acl);
+        $result                  = $this->analyzeUserAcl($acl);
         $opt                     = array_merge($opt, $result);
         $opt[self::BUCKET]       = $bucket;
         $opt[self::METHOD]       = 'PUT';
@@ -882,7 +883,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return BCS_ResponseCore
      */
-    public function delete_object($bucket, $object, $opt = array())
+    public function deleteObject($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
@@ -904,16 +905,16 @@ class BaiduBCS
      * false：不存在
      * BCS_ResponseCore其他错误
      */
-    public function is_object_exist($bucket, $object, $opt = array())
+    public function isObjectExist($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
         $opt[self::METHOD] = 'HEAD';
         $opt[self::OBJECT] = $object;
-        $response          = $this->get_object_info($bucket, $object, $opt);
+        $response          = $this->getObjectInfo($bucket, $object, $opt);
         if ($response->isOK()) {
             return true;
-        } elseif ($response->status === 404) {
+        } elseif (404 === $response->status) {
             return false;
         }
         return $response;
@@ -927,7 +928,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return array BCS_ResponseCore
      */
-    public function get_object_info($bucket, $object, $opt = array())
+    public function getObjectInfo($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
         $opt[self::BUCKET] = $bucket;
@@ -947,7 +948,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return BCS_ResponseCore
      */
-    public function get_object($bucket, $object, $opt = array())
+    public function getObject($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
         //若fileWriteTo待写入的文件已经存在，需要进行重命名
@@ -983,7 +984,7 @@ class BaiduBCS
     /**
      * 生成签名链接
      */
-    private function generate_user_url($method, $bucket, $object, $opt = array())
+    private function generateUserUrl($method, $bucket, $object, $opt = array())
     {
         $opt[self::AK]           = $this->ak;
         $opt[self::SK]           = $this->sk;
@@ -997,7 +998,7 @@ class BaiduBCS
         if (isset($opt["size"])) {
             $opt[self::QUERY_STRING]["size"] = $opt["size"];
         }
-        return $this->format_url($opt);
+        return $this->formatUrl($opt);
     }
 
     /**
@@ -1006,10 +1007,10 @@ class BaiduBCS
      * @param string $object (Required)
      * return false| string url
      */
-    public function generate_get_object_url($bucket, $object, $opt = array())
+    public function generateGetObjectUrl($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
-        return $this->generate_user_url("GET", $bucket, $object, $opt);
+        return $this->generateUserUrl("GET", $bucket, $object, $opt);
     }
 
     /**
@@ -1018,10 +1019,10 @@ class BaiduBCS
      * @param string $object (Required)
      * return false| string url
      */
-    public function generate_put_object_url($bucket, $object, $opt = array())
+    public function generatePutObjectUrl($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
-        return $this->generate_user_url("PUT", $bucket, $object, $opt);
+        return $this->generateUserUrl("PUT", $bucket, $object, $opt);
     }
 
     /**
@@ -1030,10 +1031,10 @@ class BaiduBCS
      * @param string $object (Required)
      * return false| string url
      */
-    public function generate_post_object_url($bucket, $object, $opt = array())
+    public function generatePostObjectUrl($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
-        return $this->generate_user_url("POST", $bucket, $object, $opt);
+        return $this->generateUserUrl("POST", $bucket, $object, $opt);
     }
 
     /**
@@ -1042,10 +1043,10 @@ class BaiduBCS
      * @param string $object (Required)
      * return false| string url
      */
-    public function generate_delete_object_url($bucket, $object, $opt = array())
+    public function generateDeleteObjectUrl($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
-        return $this->generate_user_url("DELETE", $bucket, $object, $opt);
+        return $this->generateUserUrl("DELETE", $bucket, $object, $opt);
     }
 
     /**
@@ -1054,16 +1055,16 @@ class BaiduBCS
      * @param string $object (Required)
      * return false| string url
      */
-    public function generate_head_object_url($bucket, $object, $opt = array())
+    public function generateHeadObjectUrl($bucket, $object, $opt = array())
     {
         $this->assertParameterArray($opt);
-        return $this->generate_user_url("HEAD", $bucket, $object, $opt);
+        return $this->generateUserUrl("HEAD", $bucket, $object, $opt);
     }
 
     /**
      * @return the $use_ssl
      */
-    public function getUse_ssl()
+    public function getuseSsl()
     {
         return $this->use_ssl;
     }
@@ -1071,7 +1072,7 @@ class BaiduBCS
     /**
      * @param boolean $use_ssl
      */
-    public function setUse_ssl($use_ssl)
+    public function setuseSsl($use_ssl)
     {
         $this->use_ssl = $use_ssl;
     }
@@ -1084,7 +1085,7 @@ class BaiduBCS
      * @param string $bucket
      * @return boolean
      */
-    public static function validate_bucket($bucket)
+    public static function validateBucket($bucket)
     {
         //bucket 正则
         $pattern1 = '/^[a-z][-a-z0-9]{4,61}[a-z0-9]$/';
@@ -1100,7 +1101,7 @@ class BaiduBCS
      * @param string $object
      * @return boolean
      */
-    public static function validate_object($object)
+    public static function validateObject($object)
     {
         $pattern = '/^\//';
         if (empty($object) || !preg_match($pattern, $object)) {
@@ -1117,7 +1118,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return void
      */
-    private static function set_header_into_opt($header, $value, &$opt)
+    private static function setHeaderIntoOpt($header, $value, &$opt)
     {
         if (isset($opt[self::HEADERS])) {
             if (!is_array($opt[self::HEADERS])) {
@@ -1136,11 +1137,11 @@ class BaiduBCS
      * @param string    $function    要执行的函数
      * @param boolean   $apply_to_keys_also     是否也应用到key上
      */
-    private static function array_recursive(&$array, $function, $apply_to_keys_also = false)
+    private static function arrayRecursive(&$array, $function, $apply_to_keys_also = false)
     {
         foreach ($array as $key => $value) {
             if (is_array($value)) {
-                self::array_recursive($array[$key], $function, $apply_to_keys_also);
+                self::arrayRecursive($array[$key], $function, $apply_to_keys_also);
             } else {
                 $array[$key] = $function($value);
             }
@@ -1159,13 +1160,13 @@ class BaiduBCS
      * 由数组构造json字符串，增加了一些特殊处理以支持特殊字符和不同编码的中文
      * @param array $array
      */
-    private static function array_to_json($array)
+    private static function arrayToJson($array)
     {
         if (!is_array($array)) {
             throw new BCS_Exception("Param must be array in function array_to_json()", -1);
         }
-        self::array_recursive($array, 'addslashes', false);
-        self::array_recursive($array, 'rawurlencode', false);
+        self::arrayRecursive($array, 'addslashes', false);
+        self::arrayRecursive($array, 'rawurlencode', false);
         return rawurldecode(json_encode($array));
     }
 
@@ -1179,12 +1180,12 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return array
      */
-    private function analyze_user_acl($acl)
+    private function analyzeUserAcl($acl)
     {
         $result = array();
         if (is_array($acl)) {
             //(1).a
-            $result['content'] = $this->check_user_acl($acl);
+            $result['content'] = $this->checkUserAcl($acl);
         } else if (is_string($acl)) {
             if (in_array($acl, self::$ACL_TYPES)) {
                 //(2).a
@@ -1205,7 +1206,7 @@ class BaiduBCS
      * @param array $opt
      * @return boolean|string
      */
-    private function format_signature($opt)
+    private function formatSignature($opt)
     {
         $flags   = "";
         $content = '';
@@ -1245,7 +1246,7 @@ class BaiduBCS
      * @throws BCS_Exception
      * @return string acl-json
      */
-    private function check_user_acl($acl)
+    private function checkUserAcl($acl)
     {
         if (!is_array($acl)) {
             throw new BCS_Exception("Invalid acl array");
@@ -1271,7 +1272,7 @@ class BaiduBCS
             }
         }
 
-        return self::array_to_json($acl);
+        return self::arrayToJson($acl);
     }
 
     /**
@@ -1279,10 +1280,10 @@ class BaiduBCS
      * @param array $opt
      * @return boolean|string
      */
-    private function format_url($opt)
+    private function formatUrl($opt)
     {
-        $sign = $this->format_signature($opt);
-        if ($sign === false) {
+        $sign = $this->formatSignature($opt);
+        if (false === $sign) {
             trigger_error("Format signature failed, please check!");
             return false;
         }
@@ -1323,12 +1324,12 @@ class BaiduBCS
      * @param string $dir 文件目录
      * @return array 文件树
      */
-    public static function get_filetree($dir, $file_prefix = "/*")
+    public static function getFiletree($dir, $file_prefix = "/*")
     {
         $tree = array();
         foreach (glob($dir . $file_prefix) as $single) {
             if (is_dir($single)) {
-                $tree = array_merge($tree, self::get_filetree($single));
+                $tree = array_merge($tree, self::getFiletree($single));
             } else {
                 $tree[] = $single;
             }

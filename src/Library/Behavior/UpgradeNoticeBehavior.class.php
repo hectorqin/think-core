@@ -60,7 +60,7 @@ class UpgradeNoticeBehavior
             //读取接口
             $info = $this->send('http://sinaclouds.sinaapp.com/thinkapi/upgrade.php?v=' . $current_version);
             if ($info['version'] != $current_version) {
-                if ($this->send_sms($info['msg'])) {
+                if ($this->sendSms($info['msg'])) {
                     trace($info['msg'], '升级通知成功', 'NOTIC', true);
                 }
                 //发送升级短信
@@ -68,7 +68,7 @@ class UpgradeNoticeBehavior
             S('think_upgrade_interval', true, C('UPGRADE_NOTICE_CHECK_INTERVAL', null, 604800));
         }
     }
-    private function send_sms($msg)
+    private function sendSms($msg)
     {
         $timestamp = time();
         $url       = 'http://inno.smsinter.sina.com.cn/sae_sms_service/sendsms.php'; //发送短信的接口地址

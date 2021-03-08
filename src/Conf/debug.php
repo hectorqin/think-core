@@ -12,7 +12,7 @@
 /**
  * ThinkPHP 默认的调试模式配置文件
  */
-defined('THINK_PATH') or exit();
+
 // 调试模式下面默认设置 可以在应用配置目录下重新定义 debug.php 覆盖
 return array(
     'LOG_RECORD'           => true, // 进行日志记录

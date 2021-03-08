@@ -12,7 +12,6 @@ namespace Think\Cache\Driver;
 
 use Think\Cache;
 
-defined('THINK_PATH') or exit();
 /**
  * Apachenote缓存驱动
  */
@@ -61,7 +60,7 @@ class Apachenote extends Cache
         }
         N('cache_read', 1);
         $this->close();
-        return $data === '' ? '' : unserialize($data);
+        return '' === $data ? '' : unserialize($data);
     }
 
     /**
@@ -82,7 +81,7 @@ class Apachenote extends Cache
         fwrite($this->handler, $s);
         $ret = fgets($this->handler);
         $this->close();
-        if ($ret === "OK\n") {
+        if ("OK\n" === $ret) {
             if ($this->options['length'] > 0) {
                 // 记录缓存队列
                 $this->queue($name);
@@ -106,7 +105,7 @@ class Apachenote extends Cache
         fwrite($this->handler, $s);
         $ret = fgets($this->handler);
         $this->close();
-        return $ret === "OK\n";
+        return "OK\n" === $ret;
     }
 
     /**

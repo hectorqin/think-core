@@ -12,7 +12,6 @@ namespace Think\Cache\Driver;
 
 use Think\Cache;
 
-defined('THINK_PATH') or exit();
 /**
  * 数据库方式缓存驱动
  *    CREATE TABLE think_cache (
@@ -58,8 +57,9 @@ class Db extends Cache
         $result = $this->handler->query('SELECT `data`,`datacrc` FROM `' . $this->options['table'] . '` WHERE `cachekey`=\'' . $name . '\' AND (`expire` =0 OR `expire`>' . time() . ') LIMIT 0,1');
         if (false !== $result) {
             $result = $result[0];
-            if (C('DATA_CACHE_CHECK')) { //开启数据校验
-                if ($result['datacrc'] != md5($result['data'])) { //校验错误
+            if (C('DATA_CACHE_CHECK')) {
+                //开启数据校验
+                if (md5($result['data']) != $result['datacrc']) { //校验错误
                     return false;
                 }
             }
@@ -92,7 +92,8 @@ class Db extends Cache
             //数据压缩
             $data = gzcompress($data, 3);
         }
-        if (C('DATA_CACHE_CHECK')) { //开启数据校验
+        if (C('DATA_CACHE_CHECK')) {
+            //开启数据校验
             $crc = md5($data);
         } else {
             $crc = '';
@@ -100,7 +101,7 @@ class Db extends Cache
         if (is_null($expire)) {
             $expire = $this->options['expire'];
         }
-        $expire = ($expire == 0) ? 0 : (time() + $expire); //缓存有效期为0表示永久缓存
+        $expire = (0 == $expire) ? 0 : (time() + $expire); //缓存有效期为0表示永久缓存
         $result = $this->handler->query('select `cachekey` from `' . $this->options['table'] . '` where `cachekey`=\'' . $name . '\' limit 0,1');
         if (!empty($result)) {
             //更新记录

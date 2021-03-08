@@ -13,6 +13,14 @@
 // ThinkPHP公共入口文件
 //----------------------------------
 
+// 依赖composer加载
+if (!class_exists('\\Composer\\Autoload\\ClassLoader')) {
+    die("请先加载composer");
+}
+
+// 注册自动加载函数
+Think\Think::registerLoader();
+
 // 记录开始运行时间
 $GLOBALS['_beginTime'] = microtime(true);
 // 记录内存初始使用
@@ -21,8 +29,19 @@ if (MEMORY_LIMIT_ON) {
     $GLOBALS['_startUseMems'] = memory_get_usage();
 }
 
+// 系统信息
+if (version_compare(PHP_VERSION, '5.4.0', '<')) {
+    ini_set('magic_quotes_runtime', 0);
+    define('MAGIC_QUOTES_GPC', get_magic_quotes_gpc() ? true : false);
+} else {
+    define('MAGIC_QUOTES_GPC', false);
+}
+define('IS_CGI', (0 === strpos(PHP_SAPI, 'cgi') || false !== strpos(PHP_SAPI, 'fcgi')) ? 1 : 0);
+define('IS_WIN', strstr(PHP_OS, 'WIN') ? 1 : 0);
+define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
+
 // 版本信息
-const THINK_VERSION = '3.2.3';
+const THINK_VERSION = '3.2.5';
 
 // URL 模式定义
 const URL_COMMON   = 0; //普通模式
@@ -34,13 +53,14 @@ const URL_COMPAT   = 3; // 兼容模式
 const EXT = '.class.php';
 
 // 系统常量定义
-defined('BASE_PATH') or define('BASE_PATH', dirname(__DIR__) . '/');
+defined('BASE_PATH') or define('BASE_PATH', dirname(__DIR__, 3) . '/');
 defined('THINK_PATH') or define('THINK_PATH', __DIR__ . '/');
 defined('APP_PATH') or define('APP_PATH', dirname($_SERVER['SCRIPT_FILENAME']) . '/');
 defined('APP_STATUS') or define('APP_STATUS', ''); // 应用状态 加载对应的配置文件
 defined('APP_DEBUG') or define('APP_DEBUG', false); // 是否调试模式
 
-if (function_exists('saeAutoLoader')) { // 自动识别SAE环境
+if (function_exists('saeAutoLoader')) {
+// 自动识别SAE环境
     defined('APP_MODE') or define('APP_MODE', 'sae');
     defined('STORAGE_TYPE') or define('STORAGE_TYPE', 'Sae');
 } else {
@@ -48,7 +68,7 @@ if (function_exists('saeAutoLoader')) { // 自动识别SAE环境
     defined('STORAGE_TYPE') or define('STORAGE_TYPE', 'File'); // 存储类型 默认为File
 }
 
-defined('RUNTIME_PATH') or define('RUNTIME_PATH', APP_PATH . 'Runtime/'); // 系统运行时目录
+defined('RUNTIME_PATH') or define('RUNTIME_PATH', BASE_PATH . 'runtime/'); // 系统运行时目录
 defined('LIB_PATH') or define('LIB_PATH', realpath(THINK_PATH . 'Library') . '/'); // 系统核心类库目录
 defined('CORE_PATH') or define('CORE_PATH', LIB_PATH . 'Think/'); // Think类库目录
 defined('BEHAVIOR_PATH') or define('BEHAVIOR_PATH', LIB_PATH . 'Behavior/'); // 行为类库目录
@@ -66,32 +86,20 @@ defined('CONF_EXT') or define('CONF_EXT', '.php'); // 配置文件后缀
 defined('CONF_PARSE') or define('CONF_PARSE', ''); // 配置文件解析方法
 defined('ADDON_PATH') or define('ADDON_PATH', APP_PATH . 'Addon/');
 
-// 系统信息
-if (version_compare(PHP_VERSION, '5.4.0', '<')) {
-    ini_set('magic_quotes_runtime', 0);
-    define('MAGIC_QUOTES_GPC', get_magic_quotes_gpc() ? true : false);
-} else {
-    define('MAGIC_QUOTES_GPC', false);
-}
-define('IS_CGI', (0 === strpos(PHP_SAPI, 'cgi') || false !== strpos(PHP_SAPI, 'fcgi')) ? 1 : 0);
-define('IS_WIN', strstr(PHP_OS, 'WIN') ? 1 : 0);
-define('IS_CLI', PHP_SAPI == 'cli' ? 1 : 0);
-
 if (!IS_CLI) {
     // 当前文件名
     if (!defined('_PHP_FILE_')) {
         if (IS_CGI) {
-            //CGI/FASTCGI模式下
-            // $_temp  = explode('.php',$_SERVER['PHP_SELF']);
-            // define('_PHP_FILE_',    rtrim(str_replace($_SERVER['HTTP_HOST'],'',$_temp[0].'.php'),'/'));
-            define('_PHP_FILE_', rtrim($_SERVER['SCRIPT_NAME'], '/'));
+            // TODO CGI/FASTCGI模式下
+            $_temp = explode('.php', $_SERVER['PHP_SELF']);
+            define('_PHP_FILE_', rtrim(str_replace($_SERVER['HTTP_HOST'], '', $_temp[0] . '.php'), '/'));
         } else {
             define('_PHP_FILE_', rtrim($_SERVER['SCRIPT_NAME'], '/'));
         }
     }
     if (!defined('__ROOT__')) {
         $_root = rtrim(dirname(_PHP_FILE_), '/');
-        define('__ROOT__', (($_root == '/' || $_root == '\\') ? '' : $_root));
+        define('__ROOT__', (('/' == $_root || '\\' == $_root) ? '' : $_root));
     }
     // 多域名模板缓存、runtime缓存区分标识
     defined('MULTI_DOMAIN_MARKING') or define('MULTI_DOMAIN_MARKING', (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'undefined') . str_replace("/", "_", __ROOT__) . '_');
@@ -108,9 +116,6 @@ if (!IS_CLI) {
         parse_str($_SERVER['argv'][2], $_GET);
     }
 }
-
-// 注册自动加载函数
-Think\Think::registerLoader();
 
 // 应用初始化
 Think\Think::start();

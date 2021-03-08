@@ -54,7 +54,10 @@ class IpLocation
     public function __construct($filename = "UTFWry.dat")
     {
         $this->fp = 0;
-        if (($this->fp = fopen(dirname(__FILE__) . '/' . $filename, 'rb')) !== false) {
+        if(!is_file($filename)) {
+            $filename = dirname(__FILE__) . '/' . $filename;
+        }
+        if (($this->fp = fopen($filename, 'rb')) !== false) {
             $this->firstip = $this->getlong();
             $this->lastip  = $this->getlong();
             $this->totalip = ($this->lastip - $this->firstip) / 7;
@@ -111,7 +114,8 @@ class IpLocation
     private function getstring($data = "")
     {
         $char = fread($this->fp, 1);
-        while (ord($char) > 0) { // 字符串按照C格式保存，以\0结束
+        while (ord($char) > 0) {
+            // 字符串按照C格式保存，以\0结束
             $data .= $char; // 将读取的字符连接到给定字符串之后
             $char = fread($this->fp, 1);
         }
@@ -167,7 +171,8 @@ class IpLocation
         $l      = 0; // 搜索的下边界
         $u      = $this->totalip; // 搜索的上边界
         $findip = $this->lastip; // 如果没有找到就返回最后一条IP记录（QQWry.Dat的版本信息）
-        while ($l <= $u) { // 当上边界小于下边界时，查找失败
+        while ($l <= $u) {
+            // 当上边界小于下边界时，查找失败
             $i = floor(($l + $u) / 2); // 计算近似中间记录
             fseek($this->fp, $this->firstip + $i * 7);
             $beginip = strrev(fread($this->fp, 4)); // 获取中间记录的开始IP地址
@@ -180,7 +185,8 @@ class IpLocation
                 $endip = strrev(fread($this->fp, 4)); // 获取中间记录的结束IP地址
                 if ($ip > $endip) { // 用户的IP大于中间记录的结束IP地址时
                     $l = $i + 1; // 将搜索的下边界修改为中间记录加一
-                } else { // 用户的IP在中间记录的IP范围内时
+                } else {
+                    // 用户的IP在中间记录的IP范围内时
                     $findip = $this->firstip + $i * 7;
                     break; // 则表示找到结果，退出循环
                 }
@@ -223,7 +229,8 @@ class IpLocation
                 $location['area']    = $this->getarea();
                 break;
         }
-        if (trim($location['country']) == 'CZ88.NET') { // CZ88.NET表示没有有效信息
+        if (trim($location['country']) == 'CZ88.NET') {
+            // CZ88.NET表示没有有效信息
             $location['country'] = '未知';
         }
         if (trim($location['area']) == 'CZ88.NET') {

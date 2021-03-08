@@ -101,7 +101,7 @@ class Firebird extends Driver
                 $info[trim($val['field'])] = array(
                     'name'    => trim($val['field']),
                     'type'    => $val['type'],
-                    'notnull' => (bool) ($val['null1'] == 1), // 1表示不为Null
+                    'notnull' => (bool) (1 == $val['null1']), // 1表示不为Null
                     'default' => $val['default1'],
                     'primary' => false,
                     'autoinc' => false,
@@ -162,4 +162,15 @@ class Firebird extends Driver
         }
         return $limitStr;
     }
+
+    /**
+     * 随机排序
+     * @access protected
+     * @return string
+     */
+    protected function parseRand()
+    {
+        return 'rand()';
+    }
+
 }

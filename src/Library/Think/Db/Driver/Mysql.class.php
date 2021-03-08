@@ -67,7 +67,7 @@ class Mysql extends Driver
                 $info[$val['field']] = array(
                     'name'    => $val['field'],
                     'type'    => $val['type'],
-                    'notnull' => (bool) ($val['null'] === ''), // not null is empty, null is yes
+                    'notnull' => (bool) ('' === $val['null']), // not null is empty, null is yes
                     'default' => $val['default'],
                     'primary' => (strtolower($val['key']) == 'pri'),
                     'autoinc' => (strtolower($val['extra']) == 'auto_increment'),
@@ -94,17 +94,37 @@ class Mysql extends Driver
 
     /**
      * 字段和表名处理
-     * @access protected
+     * @access public
      * @param string $key
+     * @param bool   $strict
      * @return string
      */
-    protected function parseKey(&$key)
+    public function parseKey($key, $strict = false)
     {
+        if (is_int($key)) {
+            return $key;
+        }
+
         $key = trim($key);
-        if (!is_numeric($key) && !preg_match('/[,\'\"\*\(\)`.\s]/', $key)) {
+
+        if ($strict && !preg_match('/^[\w\.\*]+$/', $key)) {
+            E('not support data:' . $key);
+        }
+
+        if ('*' != $key && !preg_match('/[,\'\"\*\(\)`.\s]/', $key)) {
             $key = '`' . $key . '`';
         }
         return $key;
+    }
+
+    /**
+     * 随机排序
+     * @access protected
+     * @return string
+     */
+    protected function parseRand()
+    {
+        return 'rand()';
     }
 
     /**
@@ -173,7 +193,8 @@ class Mysql extends Driver
         }
         $updates = array();
         foreach ((array) $duplicate as $key => $val) {
-            if (is_numeric($key)) { // array('field1', 'field2', 'field3') 解析为 ON DUPLICATE KEY UPDATE field1=VALUES(field1), field2=VALUES(field2), field3=VALUES(field3)
+            if (is_numeric($key)) {
+                // array('field1', 'field2', 'field3') 解析为 ON DUPLICATE KEY UPDATE field1=VALUES(field1), field2=VALUES(field2), field3=VALUES(field3)
                 $updates[] = $this->parseKey($val) . "=VALUES(" . $this->parseKey($val) . ")";
             } else {
                 if (is_scalar($val)) // 兼容标量传值方式
@@ -181,7 +202,7 @@ class Mysql extends Driver
                     $val = array('value', $val);
                 }
 
-                if (!isset($val[1])) {
+                if (!isset($val[1]) || is_null($val[1])) {
                     continue;
                 }
 

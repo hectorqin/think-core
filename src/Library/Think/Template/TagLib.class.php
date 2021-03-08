@@ -201,7 +201,8 @@ class TagLib
      */
     public function parseThinkVar($varStr)
     {
-        if (is_array($varStr)) { //用于正则替换回调函数
+        if (is_array($varStr)) {
+            //用于正则替换回调函数
             $varStr = $varStr[1];
         }
         $vars     = explode('.', $varStr);

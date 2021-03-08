@@ -21,12 +21,12 @@ class QiniuStorage
     public static function sign($sk, $ak, $data)
     {
         $sign = hash_hmac('sha1', $data, $sk, true);
-        return $ak . ':' . self::Qiniu_Encode($sign);
+        return $ak . ':' . self::qiniuEncode($sign);
     }
 
     public static function signWithData($sk, $ak, $data)
     {
-        $data = self::Qiniu_Encode($data);
+        $data = self::qiniuEncode($data);
         return self::sign($sk, $ak, $data) . ':' . $data;
     }
 
@@ -48,7 +48,7 @@ class QiniuStorage
 
     public function UploadToken($sk, $ak, $param)
     {
-        $param['deadline'] = $param['Expires'] == 0 ? 3600 : $param['Expires'];
+        $param['deadline'] = 0 == $param['Expires'] ? 3600 : $param['Expires'];
         $param['deadline'] += time();
         $data = array('scope' => $this->bucket, 'deadline' => $param['deadline']);
         if (!empty($param['CallbackUrl'])) {
@@ -87,7 +87,7 @@ class QiniuStorage
             'key'   => $config['saveName'] ?: $file['fileName'],
         );
 
-        if (is_array($config['custom_fields']) && $config['custom_fields'] !== array()) {
+        if (is_array($config['custom_fields']) && array() !== $config['custom_fields']) {
             $fields = array_merge($fields, $config['custom_fields']);
         }
 
@@ -103,7 +103,7 @@ class QiniuStorage
         $name     = $file['name'];
         $fileName = $file['fileName'];
         $fileBody = $file['fileBody'];
-        $fileName = self::Qiniu_escapeQuotes($fileName);
+        $fileName = self::qiniuEscapequotes($fileName);
         array_push($data, "Content-Disposition: form-data; name=\"$name\"; filename=\"$fileName\"");
         array_push($data, 'Content-Type: application/octet-stream');
         array_push($data, '');
@@ -158,7 +158,7 @@ class QiniuStorage
                 }
 
                 if ($param['cssurl']) {
-                    $url .= '/' . self::Qiniu_Encode($param['cssurl']);
+                    $url .= '/' . self::qiniuEncode($param['cssurl']);
                 }
 
                 break;
@@ -186,7 +186,7 @@ class QiniuStorage
     public function info($key)
     {
         $key         = trim($key);
-        $url         = "{$this->QINIU_RS_HOST}/stat/" . self::Qiniu_Encode("{$this->bucket}:{$key}");
+        $url         = "{$this->QINIU_RS_HOST}/stat/" . self::qiniuEncode("{$this->bucket}:{$key}");
         $accessToken = $this->accessToken($url);
         $response    = $this->request($url, 'POST', array(
             'Authorization' => "QBox $accessToken",
@@ -198,7 +198,7 @@ class QiniuStorage
     public function downLink($key)
     {
         $key = urlencode($key);
-        $key = self::Qiniu_escapeQuotes($key);
+        $key = self::qiniuEscapequotes($key);
         $url = "http://{$this->domain}/{$key}";
         return $url;
     }
@@ -207,7 +207,7 @@ class QiniuStorage
     public function rename($file, $new_file)
     {
         $key = trim($file);
-        $url = "{$this->QINIU_RS_HOST}/move/" . self::Qiniu_Encode("{$this->bucket}:{$key}") . '/' . self::Qiniu_Encode("{$this->bucket}:{$new_file}");
+        $url = "{$this->QINIU_RS_HOST}/move/" . self::qiniuEncode("{$this->bucket}:{$key}") . '/' . self::qiniuEncode("{$this->bucket}:{$new_file}");
         trace($url);
         $accessToken = $this->accessToken($url);
         $response    = $this->request($url, 'POST', array('Authorization' => "QBox $accessToken"));
@@ -218,7 +218,7 @@ class QiniuStorage
     public function del($file)
     {
         $key         = trim($file);
-        $url         = "{$this->QINIU_RS_HOST}/delete/" . self::Qiniu_Encode("{$this->bucket}:{$key}");
+        $url         = "{$this->QINIU_RS_HOST}/delete/" . self::qiniuEncode("{$this->bucket}:{$key}");
         $accessToken = $this->accessToken($url);
         $response    = $this->request($url, 'POST', array('Authorization' => "QBox $accessToken"));
         return $response;
@@ -230,7 +230,7 @@ class QiniuStorage
         $url = $this->QINIU_RS_HOST . '/batch';
         $ops = array();
         foreach ($files as $file) {
-            $ops[] = "/delete/" . self::Qiniu_Encode("{$this->bucket}:{$file}");
+            $ops[] = "/delete/" . self::qiniuEncode("{$this->bucket}:{$file}");
         }
         $params = 'op=' . implode('&op=', $ops);
         $url .= '?' . $params;
@@ -240,14 +240,15 @@ class QiniuStorage
         return $response;
     }
 
-    public static function Qiniu_Encode($str)
-    { // URLSafeBase64Encode
+    public static function qiniuEncode($str)
+    {
+// URLSafeBase64Encode
         $find    = array('+', '/');
         $replace = array('-', '_');
         return str_replace($find, $replace, base64_encode($str));
     }
 
-    public static function Qiniu_escapeQuotes($str)
+    public static function qiniuEscapequotes($str)
     {
         $find    = array("\\", "\"");
         $replace = array("\\\\", "\\\"");
@@ -304,13 +305,13 @@ class QiniuStorage
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
 
-        if ($method == 'PUT' || $method == 'POST') {
+        if ('PUT' == $method || 'POST' == $method) {
             curl_setopt($ch, CURLOPT_POST, 1);
         } else {
             curl_setopt($ch, CURLOPT_POST, 0);
         }
 
-        if ($method == 'HEAD') {
+        if ('HEAD' == $method) {
             curl_setopt($ch, CURLOPT_NOBODY, true);
         }
 
@@ -318,8 +319,8 @@ class QiniuStorage
         $status   = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         list($header, $body) = explode("\r\n\r\n", $response, 2);
-        if ($status == 200) {
-            if ($method == 'GET') {
+        if (200 == $status) {
+            if ('GET' == $method) {
                 return $body;
             } else {
                 return $this->response($response);

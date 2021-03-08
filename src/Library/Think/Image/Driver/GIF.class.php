@@ -375,7 +375,7 @@ class GIFDecoder
         $this->GIF_colorC = $this->GIF_buffer[4] & 0x07;
         $this->GIF_colorS = 2 << $this->GIF_colorC;
 
-        if ($this->GIF_colorF == 1) {
+        if (1 == $this->GIF_colorF) {
             $this->GIFGetByte(3 * $this->GIF_colorS);
             $this->GIF_global = $this->GIF_buffer;
         }
@@ -444,7 +444,7 @@ class GIFDecoder
              * frames.
              *
              */
-            if ($u == 4) {
+            if (4 == $u) {
                 $this->GIF_delays[] = ($this->GIF_buffer[1] | $this->GIF_buffer[2] << 8);
             }
         }
@@ -478,7 +478,7 @@ class GIFDecoder
         }
         $this->GIF_string = "GIF87a";
         $this->GIFPutByte($this->GIF_screen);
-        if ($GIF_colorF == 1) {
+        if (1 == $GIF_colorF) {
             $this->GIFGetByte(3 * $GIF_size);
             $this->GIFPutByte($this->GIF_buffer);
         } else {

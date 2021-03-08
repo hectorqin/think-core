@@ -136,7 +136,7 @@ class Verify
             $dir  = dir($ttfPath);
             $ttfs = array();
             while (false !== ($file = $dir->read())) {
-                if ($file[0] != '.' && substr($file, -4) == '.ttf') {
+                if ('.' != $file[0] && substr($file, -4) == '.ttf') {
                     $ttfs[] = $file;
                 }
             }
@@ -161,7 +161,8 @@ class Verify
         // 绘验证码
         $code   = array(); // 验证码
         $codeNX = 0; // 验证码第N个字符的左边距
-        if ($this->useZh) { // 中文验证码
+        if ($this->useZh) {
+            // 中文验证码
             for ($i = 0; $i < $this->length; $i++) {
                 $code[$i] = iconv_substr($this->zhSet, floor(mt_rand(0, mb_strlen($this->zhSet, 'utf-8') - 1)), 1, 'utf-8');
                 imagettftext($this->_image, $this->fontSize, mt_rand(-40, 40), $this->fontSize * ($i + 1) * 1.5, $this->fontSize + mt_rand(10, 20), $this->_color, $this->fontttf, $code[$i]);
@@ -219,7 +220,7 @@ class Verify
         $px2 = mt_rand($this->imageW / 2, $this->imageW * 0.8); // 曲线横坐标结束位置
 
         for ($px = $px1; $px <= $px2; $px = $px + 1) {
-            if ($w != 0) {
+            if (0 != $w) {
                 $py = $A * sin($w * $px + $f) + $b + $this->imageH / 2; // y = Asin(ωx+φ) + b
                 $i  = (int) ($this->fontSize / 5);
                 while ($i > 0) {
@@ -239,7 +240,7 @@ class Verify
         $px2 = $this->imageW;
 
         for ($px = $px1; $px <= $px2; $px = $px + 1) {
-            if ($w != 0) {
+            if (0 != $w) {
                 $py = $A * sin($w * $px + $f) + $b + $this->imageH / 2; // y = Asin(ωx+φ) + b
                 $i  = (int) ($this->fontSize / 5);
                 while ($i > 0) {
@@ -278,7 +279,7 @@ class Verify
 
         $bgs = array();
         while (false !== ($file = $dir->read())) {
-            if ($file[0] != '.' && substr($file, -4) == '.jpg') {
+            if ('.' != $file[0] && substr($file, -4) == '.jpg') {
                 $bgs[] = $path . $file;
             }
         }

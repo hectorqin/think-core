@@ -117,14 +117,14 @@ class Http
             $status = stream_get_meta_data($fp);
             if (!$status['timed_out']) {
                 while (!feof($fp)) {
-                    if (($header = @fgets($fp)) && ($header == "\r\n" || $header == "\n")) {
+                    if (($header = @fgets($fp)) && ("\r\n" == $header || "\n" == $header)) {
                         break;
                     }
                 }
 
                 $stop = false;
                 while (!feof($fp) && !$stop) {
-                    $data = fread($fp, ($limit == 0 || $limit > 8192 ? 8192 : $limit));
+                    $data = fread($fp, (0 == $limit || $limit > 8192 ? 8192 : $limit));
                     $return .= $data;
                     if ($limit) {
                         $limit -= strlen($data);
@@ -153,10 +153,10 @@ class Http
     {
         if (is_file($filename)) {
             $length = filesize($filename);
-        } elseif (is_file(UPLOAD_PATH . $filename)) {
-            $filename = UPLOAD_PATH . $filename;
+        } elseif (is_file(\UPLOAD_PATH . $filename)) {
+            $filename = \UPLOAD_PATH . $filename;
             $length   = filesize($filename);
-        } elseif ($content != '') {
+        } elseif ('' != $content) {
             $length = strlen($content);
         } else {
             E($filename . L('下载文件不存在！'));
@@ -164,7 +164,7 @@ class Http
         if (empty($showname)) {
             $showname = $filename;
         }
-        $showname = basename($showname);
+        $showname = self::get_basename($showname);;
         if (!empty($filename)) {
             $finfo = new \finfo(FILEINFO_MIME);
             $type  = $finfo->file($filename);
@@ -182,12 +182,23 @@ class Http
         header("Content-type: " . $type);
         header('Content-Encoding: none');
         header("Content-Transfer-Encoding: binary");
-        if ($content == '') {
+        // 清空文件的头部信息，解决文件下载无法打开问题
+        ob_clean(); // 清空缓冲区
+        flush();  // 刷新输出缓冲
+        if ('' == $content) {
             readfile($filename);
         } else {
             echo ($content);
         }
         exit();
+    }
+
+    /**
+     * 获取文件的名称，兼容中文名
+     * @return string
+     */
+    static public function get_basename($filename){
+        return preg_replace('/^.+[\\\\\\/]/', '', $filename);
     }
 
     /**
